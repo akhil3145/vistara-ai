@@ -1,0 +1,48 @@
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+*.local
+.oxlintcache
+
+# Python & Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+.pytest_cache/
+
+# Databases & Local Data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# ML Checkpoints & Datasets (Colab training to local separation)
+*.h5
+*.keras
+*.tflite
+*.onnx
+*.tar.gz
+*.zip
+dataset/
+PlantVillage/
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
