@@ -29,10 +29,16 @@ export const BatchTable: React.FC<BatchTableProps> = ({
             Batch Records
           </h3>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Per-item simulated outcomes. CSV export follows the filters below.
+            Per-item classification outcomes. CSV export follows the filters below.
           </p>
         </div>
-        <DemoBadge label="DEMO DATA" />
+        {items.some((item) => item.prediction && !item.prediction.isDemo) ? (
+          <span className="inline-flex items-center gap-1 rounded border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-teal-600 dark:text-teal-400">
+            REAL INFERENCE
+          </span>
+        ) : (
+          <DemoBadge label="DEMO DATA" />
+        )}
       </div>
 
       {items.length === 0 ? (
@@ -41,7 +47,7 @@ export const BatchTable: React.FC<BatchTableProps> = ({
             icon={UploadCloud}
             title="No images in the batch"
             description="Add JPEG, PNG, or WEBP images with the dropzone above, or load the illustrative demo samples."
-            hint="No files leave the browser in this phase."
+            hint="Uploaded leaves are analyzed live by MobileNetV2 at POST /api/v1/predict/batch."
           />
         </div>
       ) : (
@@ -113,10 +119,24 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                     <td className="max-w-[250px] px-4 py-2.5">
                       {item.status === 'complete' && item.prediction ? (
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="max-w-[190px] truncate text-slate-700 dark:text-slate-200">
+                          <span
+                            className="max-w-[190px] truncate text-slate-700 dark:text-slate-200"
+                            title={item.prediction.classes
+                              .map(
+                                (c, i) =>
+                                  `${i + 1}. ${c.label}: ${(c.score * 100).toFixed(1)}%`,
+                              )
+                              .join('\n')}
+                          >
                             {item.prediction.top.label}
                           </span>
-                          <DemoBadge label="DEMO" />
+                          {item.prediction.isDemo ? (
+                            <DemoBadge label="DEMO" />
+                          ) : (
+                            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[9px] font-medium text-teal-600 dark:text-teal-400">
+                              REAL
+                            </span>
+                          )}
                         </div>
                       ) : item.status === 'error' ? (
                         <span
@@ -131,7 +151,9 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                             className="h-3.5 w-3.5 animate-spin"
                             aria-hidden="true"
                           />
-                          Running demo
+                          {item.meta.source === 'upload'
+                            ? 'Analyzing via API'
+                            : 'Running demo'}
                         </span>
                       ) : (
                         <span className="text-slate-400 dark:text-slate-500">
@@ -186,7 +208,13 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                     </td>
                     <td className="px-4 py-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
                       {item.prediction ? (
-                        <span title="Simulated latency">
+                        <span
+                          title={
+                            item.prediction.isDemo
+                              ? 'Simulated demo latency'
+                              : 'Server-measured inference latency'
+                          }
+                        >
                           {item.prediction.latencyMs} ms
                         </span>
                       ) : (

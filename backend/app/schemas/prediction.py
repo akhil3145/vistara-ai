@@ -41,7 +41,9 @@ class BatchItemResult(CamelModel):
     """Result for an individual image in a batch."""
 
     filename: str
-    status: Literal["success", "accepted", "rejected", "model_unavailable"]
+    status: Literal[
+        "success", "accepted", "rejected", "model_unavailable", "error"
+    ]
     size_bytes: int | None = None
     image_format: str | None = None
     elapsed_ms: float | None = None
@@ -58,6 +60,7 @@ class BatchPredictionResponse(CamelModel):
         "partial_success",
         "model_unavailable",
         "rejected",
+        "error",
     ] = "model_unavailable"
 
     message: str

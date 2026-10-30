@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Info } from 'lucide-react';
+import {
+  AlertTriangle,
+  Info,
+  Loader2,
+  ScanLine,
+} from 'lucide-react';
 import { PageContainer } from '../components/layout/PageContainer';
 import { DemoBadge } from '../components/ui/DemoBadge';
 import { DemoBanner } from '../components/ui/DemoBanner';
@@ -12,52 +17,39 @@ import {
 import { SAMPLE_GALLERY_BY_ID } from '../data/sampleGallery';
 import { generateDemoPrediction } from '../lib/demoPredictions';
 import { readImageDimensions, validateImageFile } from '../lib/imageUtils';
-import type { DemoPrediction, SelectedImage } from '../types/prediction';
+import {
+  mapBackendPrediction,
+  predictSingle,
+} from '../services/apiClient';
+import type { FormattedPrediction, SelectedImage } from '../types/prediction';
 
 const ANALYSIS_DELAY_MS = 900;
 
 export const ScannerPage: React.FC = () => {
   const [image, setImage] = useState<SelectedImage | null>(null);
   const [status, setStatus] = useState<ScanStatus>('idle');
-  const [prediction, setPrediction] = useState<DemoPrediction | null>(null);
+  const [prediction, setPrediction] = useState<FormattedPrediction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const analysisIdRef = useRef(0);
   const timeoutRef = useRef<number | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const clearPendingAnalysis = () => {
+  const cancelPendingRequests = () => {
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-  };
-
-  const beginRequest = (): number => {
-    clearPendingAnalysis();
-    analysisIdRef.current += 1;
-    return analysisIdRef.current;
-  };
-
-  const schedulePrediction = (nextImage: SelectedImage, requestId: number) => {
-    setStatus('analyzing');
-    setPrediction(null);
-    setError(null);
-    timeoutRef.current = window.setTimeout(() => {
-      if (analysisIdRef.current !== requestId) return;
-      setPrediction(
-        generateDemoPrediction(nextImage.seed, nextImage.sampleClassId),
-      );
-      setStatus('success');
-      timeoutRef.current = null;
-    }, ANALYSIS_DELAY_MS);
+    if (abortControllerRef.current !== null) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
   };
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current !== null) {
-        window.clearTimeout(timeoutRef.current);
-      }
+      cancelPendingRequests();
     };
   }, []);
 
@@ -69,6 +61,10 @@ export const ScannerPage: React.FC = () => {
     };
   }, [uploadSrc]);
 
+  /**
+   * Selection handler: validates the image file, creates its preview,
+   * reads dimensions, and stores the file without auto-triggering prediction.
+   */
   const handleFiles = (files: File[]) => {
     if (files.length === 0) return;
 
@@ -79,11 +75,17 @@ export const ScannerPage: React.FC = () => {
       return;
     }
 
-    const requestId = beginRequest();
+    cancelPendingRequests();
+    analysisIdRef.current += 1;
+    const currentSelectionId = analysisIdRef.current;
+
     setInputError(null);
+    setError(null);
+    setPrediction(null);
+    setStatus('idle');
     setNotice(
       files.length > 1
-        ? 'Only the first image is previewed here. Use Batch Analysis to queue multiple images.'
+        ? 'Only the first image is selected. Use Batch Analysis to queue multiple images.'
         : null,
     );
 
@@ -92,6 +94,7 @@ export const ScannerPage: React.FC = () => {
       id: `upload-${file.name}-${file.lastModified}-${file.size}`,
       src,
       seed: `upload:${file.name}:${file.size}:${file.lastModified}`,
+      file,
       meta: {
         name: file.name,
         mimeType: file.type || 'image/unknown',
@@ -102,13 +105,10 @@ export const ScannerPage: React.FC = () => {
     };
 
     setImage(nextImage);
-    setStatus('analyzing');
-    setPrediction(null);
-    setError(null);
 
     readImageDimensions(src)
       .then((dimensions) => {
-        if (analysisIdRef.current !== requestId) return;
+        if (analysisIdRef.current !== currentSelectionId) return;
         setImage((current) =>
           current && current.src === src
             ? {
@@ -121,23 +121,29 @@ export const ScannerPage: React.FC = () => {
               }
             : current,
         );
-        schedulePrediction(nextImage, requestId);
       })
       .catch(() => {
-        if (analysisIdRef.current !== requestId) return;
+        if (analysisIdRef.current !== currentSelectionId) return;
         setImage(null);
         setPrediction(null);
         setStatus('error');
         setError(
-          'The selected file could not be decoded as an image. It may be corrupted or use an unsupported codec.',
+          'The selected file could not be decoded as an image. It may be corrupted or use an unsupported format.',
         );
       });
   };
 
+  /**
+   * Selection handler for sample gallery benchmark assets.
+   * Updates preview without auto-triggering prediction.
+   */
   const handleSampleSelect = (sampleId: string) => {
     const sample = SAMPLE_GALLERY_BY_ID.get(sampleId);
     if (!sample) return;
-    const requestId = beginRequest();
+
+    cancelPendingRequests();
+    analysisIdRef.current += 1;
+
     const nextImage: SelectedImage = {
       id: sample.id,
       src: sample.src,
@@ -152,10 +158,85 @@ export const ScannerPage: React.FC = () => {
         licenseNote: sample.license,
       },
     };
+
     setImage(nextImage);
+    setStatus('idle');
+    setPrediction(null);
+    setError(null);
     setInputError(null);
     setNotice(null);
-    schedulePrediction(nextImage, requestId);
+  };
+
+  /**
+   * Explicit manual analysis action triggered by "Analyze Leaf".
+   * For uploaded images: sends real image to POST /api/v1/predict.
+   * For sample assets: generates simulated demonstration preview.
+   * Protects against stale requests.
+   */
+  const handleAnalyzeLeaf = async () => {
+    if (!image || status === 'analyzing') return;
+
+    cancelPendingRequests();
+    analysisIdRef.current += 1;
+    const currentRequestId = analysisIdRef.current;
+
+    setStatus('analyzing');
+    setPrediction(null);
+    setError(null);
+
+    if (image.meta.source === 'upload') {
+      if (!image.file) {
+        setStatus('error');
+        setError(
+          'No uploaded image file is available for analysis. Please re-select a leaf image.',
+        );
+        return;
+      }
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      try {
+        const responseDto = await predictSingle(
+          image.file,
+          controller.signal,
+        );
+
+        if (analysisIdRef.current !== currentRequestId) {
+          // Stale request discarded
+          return;
+        }
+
+        const realResult = mapBackendPrediction(responseDto);
+        setPrediction(realResult);
+        setStatus('success');
+      } catch (err: any) {
+        if (analysisIdRef.current !== currentRequestId) return;
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+
+        setStatus('error');
+        setError(
+          err.message ||
+            'An unexpected error occurred while communicating with the backend.',
+        );
+      } finally {
+        if (analysisIdRef.current === currentRequestId) {
+          abortControllerRef.current = null;
+        }
+      }
+    } else {
+      // Sample gallery illustrative asset: simulated demo prediction
+      timeoutRef.current = window.setTimeout(() => {
+        if (analysisIdRef.current !== currentRequestId) return;
+        const demoResult = generateDemoPrediction(
+          image.seed,
+          image.sampleClassId,
+        );
+        setPrediction(demoResult);
+        setStatus('success');
+        timeoutRef.current = null;
+      }, ANALYSIS_DELAY_MS);
+    }
   };
 
   const selectedSampleId =
@@ -170,14 +251,40 @@ export const ScannerPage: React.FC = () => {
           Screen A
         </span>
       }
-      actions={<DemoBadge label="DEMO MODE" />}
+      actions={
+        prediction && !prediction.isDemo ? (
+          <span className="rounded border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-600 dark:text-teal-400">
+            REAL INFERENCE
+          </span>
+        ) : (
+          <DemoBadge label="DEMO MODE" />
+        )
+      }
     >
-      <DemoBanner title="Simulated scanner results">
-        This screen does not contact a model or backend. The upload flow,
-        confidence ring, and class-score bars are populated with deterministic
-        DEMO DATA so the interface can be reviewed before training is complete.
-        No prediction shown here is real model inference.
-      </DemoBanner>
+      {/* Informative banner distinguishing real vs demo */}
+      {prediction && !prediction.isDemo ? (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 text-xs text-teal-900 dark:text-teal-200"
+        >
+          <ScanLine className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+          <div className="space-y-0.5">
+            <span className="font-semibold">Live Model Inference Output</span>
+            <p className="leading-relaxed text-teal-800/90 dark:text-teal-300/90">
+              This prediction was produced by the local FastAPI backend using
+              MobileNetV2 over the PlantVillage 38-class benchmark. Inference
+              latency was measured directly on the server.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <DemoBanner title="Simulated demonstration mode">
+          Uploaded images are classified live by the FastAPI backend (
+          <code>POST /api/v1/predict</code>). Curated sample gallery SVGs
+          remain illustrative demo assets for layout preview. Click &quot;Analyze
+          Leaf&quot; to execute inference.
+        </DemoBanner>
+      )}
 
       {inputError && (
         <div
@@ -214,9 +321,43 @@ export const ScannerPage: React.FC = () => {
                 onFiles={handleFiles}
                 disabled={status === 'analyzing'}
               />
+
+              {/* Action Bar with prominent Analyze Leaf Button */}
+              <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-navy-800">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  {image ? (
+                    <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-200">
+                      <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                      Ready: <span className="font-mono truncate max-w-[220px]">{image.meta.name}</span>
+                    </span>
+                  ) : (
+                    'Select or drop a leaf image to begin'
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAnalyzeLeaf}
+                  disabled={!image || status === 'analyzing'}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-navy-900"
+                >
+                  {status === 'analyzing' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-teal-200" />
+                      <span>Analyzing Leaf...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ScanLine className="h-4 w-4" />
+                      <span>Analyze Leaf</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               <p className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                Images are read in the browser for preview only. Uploaded files
-                are not sent to a server in this phase.
+                Uploaded leaf files are sent securely to the FastAPI backend (
+                <code>POST /api/v1/predict</code>) for MobileNetV2 classification.
               </p>
             </div>
           </div>
@@ -236,6 +377,7 @@ export const ScannerPage: React.FC = () => {
             status={status}
             prediction={prediction}
             error={error}
+            onAnalyze={handleAnalyzeLeaf}
           />
         </div>
       </div>

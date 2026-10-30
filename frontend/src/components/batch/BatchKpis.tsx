@@ -27,6 +27,9 @@ export const BatchKpis: React.FC<BatchKpisProps> = ({ items, threshold }) => {
     frequency.set(label, (frequency.get(label) ?? 0) + 1);
   });
   const mode = Array.from(frequency.entries()).sort((a, b) => b[1] - a[1])[0];
+  const hasRealInference = completed.some(
+    (i) => i.prediction && !i.prediction.isDemo,
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -40,7 +43,11 @@ export const BatchKpis: React.FC<BatchKpisProps> = ({ items, threshold }) => {
       <StatCard
         label="Mean Top-1 Score"
         value={meanConfidence === null ? '—' : `${meanConfidence.toFixed(1)}%`}
-        hint="Mean of simulated top-1 scores"
+        hint={
+          hasRealInference
+            ? 'Mean of top-1 class scores'
+            : 'Mean of simulated top-1 scores'
+        }
         icon={Target}
         tone="teal"
       />

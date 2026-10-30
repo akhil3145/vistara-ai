@@ -13,12 +13,15 @@ import { BatchKpis } from '../components/batch/BatchKpis';
 import { BatchTable } from '../components/batch/BatchTable';
 import { DemoBadge } from '../components/ui/DemoBadge';
 import { DemoBanner } from '../components/ui/DemoBanner';
-import { EmptyState } from '../components/ui/EmptyState';
 import { FileDropzone } from '../components/ui/FileDropzone';
 import { SAMPLE_GALLERY } from '../data/sampleGallery';
 import { downloadCsv } from '../lib/csv';
 import { generateDemoPrediction } from '../lib/demoPredictions';
 import { readImageDimensions, validateImageFile } from '../lib/imageUtils';
+import {
+  mapBatchItemPrediction,
+  predictBatch,
+} from '../services/apiClient';
 import type {
   BatchConfidenceFilter,
   BatchItem,
@@ -26,7 +29,7 @@ import type {
 } from '../types/batch';
 
 const MAX_BATCH_ITEMS = 24;
-const DEMO_ANALYSIS_DELAY_MS = 320;
+const DEMO_ANALYSIS_DELAY_MS = 280;
 
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => {
@@ -48,6 +51,7 @@ export const BatchPage: React.FC = () => {
   const [notice, setNotice] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const itemsRef = useRef(items);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -57,6 +61,9 @@ export const BatchPage: React.FC = () => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       itemsRef.current.forEach((item) => {
         if (item.meta.source === 'upload') {
           URL.revokeObjectURL(item.src);
@@ -71,6 +78,10 @@ export const BatchPage: React.FC = () => {
     );
   };
 
+  /**
+   * Selection handler: preserves raw File object, validates dimensions,
+   * and queues items without immediate automatic execution.
+   */
   const handleFiles = (files: File[]) => {
     if (isRunning || files.length === 0) return;
     const available = MAX_BATCH_ITEMS - itemsRef.current.length;
@@ -102,7 +113,7 @@ export const BatchPage: React.FC = () => {
     setInputErrors(errors);
     setNotice(
       accepted.length > 0
-        ? `Added ${accepted.length} image${accepted.length === 1 ? '' : 's'} to the queue. Run the demo analysis to generate simulated results.`
+        ? `Added ${accepted.length} image${accepted.length === 1 ? '' : 's'} to the queue. Click "Run batch analysis" to process.`
         : null,
     );
 
@@ -112,6 +123,7 @@ export const BatchPage: React.FC = () => {
         id: `batch-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
         src,
         seed: `batch:${file.name}:${file.size}:${file.lastModified}`,
+        file, // Preserve raw File object for multipart batch transmission
         meta: {
           name: file.name,
           mimeType: file.type || 'image/unknown',
@@ -154,6 +166,10 @@ export const BatchPage: React.FC = () => {
     });
   };
 
+  /**
+   * Loads illustrative SVG benchmark assets into the queue.
+   * Kept strictly separate as demonstration items.
+   */
   const loadDemoSamples = () => {
     if (isRunning) return;
     const available = MAX_BATCH_ITEMS - itemsRef.current.length;
@@ -197,10 +213,16 @@ export const BatchPage: React.FC = () => {
     setItems((current) => [...current, ...sampleItems]);
     setInputErrors([]);
     setNotice(
-      `Added ${sampleItems.length} illustrative sample${sampleItems.length === 1 ? '' : 's'}. Run the demo analysis to generate simulated results.`,
+      `Added ${sampleItems.length} illustrative sample${sampleItems.length === 1 ? '' : 's'}. Demo assets are simulated locally.`,
     );
   };
 
+  /**
+   * Executes batch inference:
+   * - Real uploaded files are sent in multipart to POST /api/v1/predict/batch
+   * - Illustrative SVG demo samples are processed separately via simulation
+   * - Prevents duplicate clicks while running
+   */
   const runBatch = async () => {
     if (isRunning) return;
     const queuedItems = itemsRef.current.filter(
@@ -209,33 +231,169 @@ export const BatchPage: React.FC = () => {
     if (queuedItems.length === 0) return;
 
     setIsRunning(true);
-    setProgress(0);
+    setProgress(5);
+    setInputErrors([]);
     setNotice(null);
-    let completedCount = 0;
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Split queued items by source: uploaded files vs. illustrative demo assets
+    const uploadedQueued = queuedItems.filter(
+      (item) => item.meta.source === 'upload',
+    );
+    const sampleQueued = queuedItems.filter(
+      (item) => item.meta.source === 'sample',
+    );
+
+    // Mark all target items as analyzing
     for (const item of queuedItems) {
-      if (!mountedRef.current) return;
       patchItem(item.id, { status: 'analyzing', error: undefined });
-      await delay(DEMO_ANALYSIS_DELAY_MS);
-      if (!mountedRef.current) return;
-      if (!itemsRef.current.some((current) => current.id === item.id)) {
-        continue;
+    }
+
+    let completedUploadCount = 0;
+
+    // 1. Process uploaded files with the real backend endpoint
+    if (uploadedQueued.length > 0) {
+      const filesToSend: File[] = [];
+      const validUploadItems: BatchItem[] = [];
+
+      for (const item of uploadedQueued) {
+        if (item.file) {
+          filesToSend.push(item.file);
+          validUploadItems.push(item);
+        } else {
+          patchItem(item.id, {
+            status: 'error',
+            error: 'Missing original file reference.',
+          });
+        }
       }
-      patchItem(item.id, {
-        status: 'complete',
-        prediction: generateDemoPrediction(item.seed, item.sampleClassId),
-        error: undefined,
-      });
-      completedCount += 1;
-      setProgress(Math.round((completedCount / queuedItems.length) * 100));
+
+      if (filesToSend.length > 0) {
+        try {
+          setProgress(20);
+          const batchResponse = await predictBatch(
+            filesToSend,
+            controller.signal,
+          );
+
+          if (!mountedRef.current) return;
+          setProgress(65);
+
+          // Map server results back to corresponding batch items by index
+          batchResponse.items.forEach((itemResult, idx) => {
+            const batchItem = validUploadItems[idx];
+            if (!batchItem) return;
+
+            if (itemResult.status === 'success') {
+              const realPrediction = mapBatchItemPrediction(
+                itemResult,
+                batchResponse.modelVersion,
+                batchResponse.requestId,
+              );
+              patchItem(batchItem.id, {
+                status: 'complete',
+                prediction: realPrediction,
+                error: undefined,
+              });
+              completedUploadCount += 1;
+            } else if (itemResult.status === 'rejected') {
+              patchItem(batchItem.id, {
+                status: 'error',
+                error:
+                  itemResult.message ||
+                  itemResult.errorCode ||
+                  'Image rejected by server.',
+              });
+            } else if (itemResult.status === 'model_unavailable') {
+              patchItem(batchItem.id, {
+                status: 'error',
+                error:
+                  itemResult.message ||
+                  'Prediction model is currently unavailable on backend.',
+              });
+            } else {
+              patchItem(batchItem.id, {
+                status: 'error',
+                error: itemResult.message || 'Server inference error occurred.',
+              });
+            }
+          });
+
+          // Check overall batch status message
+          if (batchResponse.status === 'rejected') {
+            setInputErrors([
+              batchResponse.message ||
+                'All uploaded images were rejected by the backend.',
+            ]);
+          } else if (batchResponse.status === 'model_unavailable') {
+            setInputErrors([
+              batchResponse.message ||
+                'No trained model is currently loaded on the backend.',
+            ]);
+          } else if (batchResponse.status === 'error') {
+            setInputErrors([
+              batchResponse.message ||
+                'Inference error occurred on all uploaded images.',
+            ]);
+          }
+        } catch (err: any) {
+          if (!mountedRef.current) return;
+          if (err instanceof DOMException && err.name === 'AbortError') return;
+
+          const errorMsg =
+            err.message ||
+            'Failed to complete backend batch inference request.';
+          for (const item of validUploadItems) {
+            patchItem(item.id, {
+              status: 'error',
+              error: errorMsg,
+            });
+          }
+          setInputErrors([errorMsg]);
+        }
+      }
+    }
+
+    // 2. Process illustrative demo samples separately
+    let completedSampleCount = 0;
+    if (sampleQueued.length > 0) {
+      for (const sample of sampleQueued) {
+        if (!mountedRef.current) return;
+        await delay(DEMO_ANALYSIS_DELAY_MS);
+        if (!mountedRef.current) return;
+        patchItem(sample.id, {
+          status: 'complete',
+          prediction: generateDemoPrediction(sample.seed, sample.sampleClassId),
+          error: undefined,
+        });
+        completedSampleCount += 1;
+        const totalItems = queuedItems.length;
+        const done = completedUploadCount + completedSampleCount;
+        setProgress(Math.min(95, Math.round((done / totalItems) * 100)));
+      }
     }
 
     if (!mountedRef.current) return;
     setProgress(100);
     setIsRunning(false);
-    setNotice(
-      `${completedCount} simulated analysis${completedCount === 1 ? '' : 'es'} complete. Every score shown is DEMO DATA.`,
-    );
+    abortControllerRef.current = null;
+
+    // User-facing summary notice
+    if (uploadedQueued.length > 0 && sampleQueued.length > 0) {
+      setNotice(
+        `Batch complete: ${completedUploadCount} uploaded file${completedUploadCount === 1 ? '' : 's'} analyzed by MobileNetV2 backend; ${completedSampleCount} illustrative sample${completedSampleCount === 1 ? '' : 's'} simulated separately.`,
+      );
+    } else if (uploadedQueued.length > 0) {
+      setNotice(
+        `Backend batch analysis complete: ${completedUploadCount} of ${uploadedQueued.length} uploaded image${uploadedQueued.length === 1 ? '' : 's'} successfully classified by MobileNetV2.`,
+      );
+    } else if (sampleQueued.length > 0) {
+      setNotice(
+        `${completedSampleCount} illustrative sample asset${completedSampleCount === 1 ? '' : 's'} simulated. All sample scores are DEMO DATA.`,
+      );
+    }
   };
 
   const removeItem = (id: string) => {
@@ -311,6 +469,11 @@ export const BatchPage: React.FC = () => {
     setConfidenceFilter('all');
   };
 
+  /**
+   * Exports batch classification records to CSV.
+   * Accurately exports real backend MobileNetV2 results for uploads and
+   * clearly marks illustrative demo rows as DEMO DATA.
+   */
   const handleExportCsv = () => {
     if (filteredItems.length === 0) return;
     const headers = [
@@ -321,15 +484,32 @@ export const BatchPage: React.FC = () => {
       'class_id',
       'crop',
       'top1_score_percent',
+      'top5_scores',
       'needs_review',
       'review_threshold_percent',
-      'simulated_latency_ms',
+      'latency_ms',
+      'latency_type',
       'model_version',
       'error',
       'analysis_mode',
     ];
+
     const rows = filteredItems.map((item) => {
       const confidence = confidenceOf(item);
+      const isDemo =
+        item.prediction?.isDemo ?? (item.meta.source === 'sample');
+      const latencyType = item.prediction
+        ? isDemo
+          ? 'simulated'
+          : 'measured_inference'
+        : '';
+      const analysisMode = isDemo ? 'DEMO DATA' : 'REAL MODEL';
+      const top5Summary = item.prediction
+        ? item.prediction.classes
+            .map((c) => `${c.label} (${(c.score * 100).toFixed(1)}%)`)
+            .join('; ')
+        : '';
+
       return [
         item.meta.name,
         item.meta.source,
@@ -338,25 +518,39 @@ export const BatchPage: React.FC = () => {
         item.prediction?.top.classId ?? '',
         item.prediction?.top.crop ?? '',
         confidence === null ? '' : confidence.toFixed(1),
+        top5Summary,
         confidence === null ? '' : confidence < threshold ? 'yes' : 'no',
         String(threshold),
         item.prediction ? String(item.prediction.latencyMs) : '',
+        latencyType,
         item.prediction?.modelVersion ?? '',
         item.error ?? '',
-        'DEMO DATA',
+        analysisMode,
       ];
     });
+
+    const hasRealInferences = filteredItems.some(
+      (item) => item.prediction && !item.prediction.isDemo,
+    );
+    const prefix = hasRealInferences
+      ? 'vistara-batch-analysis'
+      : 'vistara-batch-demo';
+
     downloadCsv(
-      `vistara-batch-demo-${new Date().toISOString().slice(0, 10)}.csv`,
+      `${prefix}-${new Date().toISOString().slice(0, 10)}.csv`,
       headers,
       rows,
     );
   };
 
+  const hasRealInferences = items.some(
+    (item) => item.prediction && !item.prediction.isDemo,
+  );
+
   return (
     <PageContainer
       title="Batch Analysis Queue"
-      subtitle="Multi-image foliar screening with simulated results, uncertainty filters, and CSV export."
+      subtitle="High-throughput multi-image foliar screening with backend inference, uncertainty filters, and CSV export."
       badge={
         <span className="rounded border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 font-mono text-[11px] text-sky-600 dark:text-sky-400">
           Screen B
@@ -364,7 +558,13 @@ export const BatchPage: React.FC = () => {
       }
       actions={
         <>
-          <DemoBadge label="DEMO MODE" />
+          {hasRealInferences ? (
+            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-600 dark:text-teal-400">
+              REAL INFERENCE
+            </span>
+          ) : (
+            <DemoBadge label="DEMO MODE" />
+          )}
           <button
             type="button"
             onClick={handleExportCsv}
@@ -377,11 +577,31 @@ export const BatchPage: React.FC = () => {
         </>
       }
     >
-      <DemoBanner title="Simulated batch analysis">
-        Batch processing runs entirely in the browser with deterministic DEMO
-        DATA. No upload, model inference, or server request occurs. Every
-        prediction, score, and latency is simulated for interface review.
-      </DemoBanner>
+      {/* Informative mode banner */}
+      {hasRealInferences ? (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 text-xs text-teal-900 dark:text-teal-200"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+          <div className="space-y-0.5">
+            <span className="font-semibold">Backend Batch Inference Active</span>
+            <p className="leading-relaxed text-teal-800/90 dark:text-teal-300/90">
+              Uploaded leaf images are classified live by the FastAPI backend (
+              <code>POST /api/v1/predict/batch</code>) using MobileNetV2. Latencies
+              and top-5 scores reflect genuine server execution. Illustrative SVG
+              samples are processed separately as demo data.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <DemoBanner title="Batch analysis mode">
+          Uploaded foliar images are sent to the FastAPI backend (
+          <code>POST /api/v1/predict/batch</code>) for live MobileNetV2 inference.
+          Illustrative sample gallery SVGs remain demo assets. Click &quot;Run batch
+          analysis&quot; to execute.
+        </DemoBanner>
+      )}
 
       {inputErrors.length > 0 && (
         <div
@@ -390,7 +610,7 @@ export const BatchPage: React.FC = () => {
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div className="space-y-1">
-            <div className="font-semibold">Some files were not added</div>
+            <div className="font-semibold">Notice regarding batch execution</div>
             <ul className="list-inside list-disc space-y-0.5">
               {inputErrors.map((message) => (
                 <li key={message}>{message}</li>
@@ -418,7 +638,13 @@ export const BatchPage: React.FC = () => {
           >
             Batch Summary
           </h3>
-          <DemoBadge label="DEMO DATA" />
+          {hasRealInferences ? (
+            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-600 dark:text-teal-400">
+              REAL INFERENCE
+            </span>
+          ) : (
+            <DemoBadge label="DEMO DATA" />
+          )}
         </div>
         <BatchKpis items={items} threshold={threshold} />
       </section>
@@ -447,7 +673,7 @@ export const BatchPage: React.FC = () => {
             type="button"
             onClick={runBatch}
             disabled={isRunning || queuedCount === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isRunning ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -456,8 +682,8 @@ export const BatchPage: React.FC = () => {
             )}
             <span>
               {isRunning
-                ? 'Running demo analysis'
-                : `Run demo analysis${queuedCount > 0 ? ` (${queuedCount})` : ''}`}
+                ? 'Running batch analysis...'
+                : `Run batch analysis${queuedCount > 0 ? ` (${queuedCount})` : ''}`}
             </span>
           </button>
           <button
@@ -474,13 +700,13 @@ export const BatchPage: React.FC = () => {
         {isRunning && (
           <div className="mt-4" role="status" aria-live="polite">
             <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-              <span>Simulated analysis progress</span>
+              <span>Batch analysis progress</span>
               <span className="font-mono">{progress}%</span>
             </div>
             <div
               className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-navy-950"
               role="progressbar"
-              aria-label="Simulated batch analysis progress"
+              aria-label="Batch analysis progress"
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={progress}
@@ -494,8 +720,9 @@ export const BatchPage: React.FC = () => {
         )}
 
         <p className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-          Files are read locally for thumbnails and metadata only. The demo
-          samples are generated SVG illustrations, not photographs.
+          Uploaded leaf images are sent to the FastAPI backend (
+          <code>POST /api/v1/predict/batch</code>) for MobileNetV2 inference.
+          Illustrative demo samples are generated SVG graphics processed locally.
         </p>
       </div>
 
@@ -532,7 +759,7 @@ export const BatchPage: React.FC = () => {
               htmlFor="batch-confidence-filter"
               className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
             >
-              Confidence band
+              Score range
             </label>
             <select
               id="batch-confidence-filter"
@@ -542,78 +769,62 @@ export const BatchPage: React.FC = () => {
               }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
             >
-              <option value="all">All confidence bands</option>
-              <option value="lt50">Below 50%</option>
-              <option value="50to70">50% to 69.9%</option>
-              <option value="70to90">70% to 89.9%</option>
-              <option value="gte90">90% and above</option>
+              <option value="all">All score ranges</option>
+              <option value="gte90">&ge; 90% score</option>
+              <option value="70to90">70% to 90% score</option>
+              <option value="50to70">50% to 70% score</option>
+              <option value="lt50">&lt; 50% score</option>
             </select>
           </div>
 
           <div>
-            <div className="mb-1 flex items-center justify-between gap-2">
+            <div className="mb-1 flex items-center justify-between text-xs">
               <label
-                htmlFor="batch-review-threshold"
-                className="text-xs font-medium text-slate-600 dark:text-slate-300"
+                htmlFor="batch-threshold"
+                className="font-medium text-slate-600 dark:text-slate-300"
               >
                 Review threshold
               </label>
-              <output
-                htmlFor="batch-review-threshold"
-                className="font-mono text-xs text-sky-600 dark:text-sky-400"
-              >
+              <span className="font-mono text-slate-500 dark:text-slate-400">
                 {threshold}%
-              </output>
+              </span>
             </div>
             <input
-              id="batch-review-threshold"
+              id="batch-threshold"
               type="range"
               min={40}
               max={95}
-              step={5}
+              step={1}
               value={threshold}
               onChange={(event) => setThreshold(Number(event.target.value))}
-              aria-describedby="uncertainty-help"
               className="w-full accent-sky-500"
             />
           </div>
         </div>
-        <p
-          id="uncertainty-help"
-          className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400"
-        >
-          Uncertainty here is defined as 1 minus the simulated top-1 class
-          score. Rows whose score falls below the review threshold are flagged
-          as <strong>Needs review</strong>. These demo scores are uncalibrated
-          and do not represent diagnostic confidence.
-        </p>
+
+        {(statusFilter !== 'all' || confidenceFilter !== 'all') && (
+          <div className="mt-3 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-slate-400">
+              Showing {filteredItems.length} of {items.length} items
+            </span>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+            >
+              <FilterX className="h-3 w-3" />
+              <span>Clear filters</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {items.length > 0 && filteredItems.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-navy-800 dark:bg-navy-900">
-          <EmptyState
-            icon={FilterX}
-            title="No records match the current filters"
-            description="Adjust the status, confidence band, or review threshold to see batch rows."
-            action={
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-500/40 hover:text-sky-700 dark:border-navy-800 dark:text-slate-200 dark:hover:text-sky-300"
-              >
-                Clear filters
-              </button>
-            }
-          />
-        </div>
-      ) : (
-        <BatchTable
-          items={filteredItems}
-          threshold={threshold}
-          onRemove={removeItem}
-          disabled={isRunning}
-        />
-      )}
+      <BatchTable
+        items={filteredItems}
+        threshold={threshold}
+        disabled={isRunning}
+        onRemove={removeItem}
+      />
     </PageContainer>
   );
 };

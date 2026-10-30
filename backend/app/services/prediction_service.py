@@ -44,6 +44,8 @@ ALL_REJECTED_MESSAGE = (
     "Every uploaded file was rejected before inference. No model was called."
 )
 
+INFERENCE_FAILED_MESSAGE = "Model inference failed for this image."
+
 TOP_K = 5
 IMAGE_SIZE = (224, 224)
 
@@ -285,7 +287,7 @@ class PredictionService:
         self,
         uploads: list[UploadFile],
     ) -> tuple[BatchPredictionResponse, int]:
-        """Validate batch uploads; batch inference is not implemented yet."""
+        """Validate batch uploads, run inference, and record telemetry."""
 
         if len(uploads) > self.settings.max_batch_files:
             raise BatchValidationError(
@@ -304,9 +306,13 @@ class PredictionService:
         request_id = uuid4().hex
         accepted_count = 0
         rejected_count = 0
+        successful_count = 0
+        failed_count = 0
 
         items: list[BatchItemResult] = []
         log_entries: list[dict[str, Any]] = []
+
+        model_available = self.model_service.is_loaded
 
         for upload in uploads:
             try:
@@ -361,41 +367,172 @@ class PredictionService:
 
             accepted_count += 1
 
+            # Step 1: Check model readiness before running inference.
+            if not model_available:
+                items.append(
+                    BatchItemResult(
+                        filename=validated.filename,
+                        status="model_unavailable",
+                        size_bytes=validated.size_bytes,
+                        image_format=validated.image_format,
+                        error_code="model_unavailable",
+                        message=MODEL_UNAVAILABLE_MESSAGE,
+                    )
+                )
+
+                # SQLite prediction logs only allow success,
+                # model_unavailable, rejected, and error.
+                log_entries.append(
+                    {
+                        "status": "model_unavailable",
+                        "filename": validated.filename,
+                        "mime_type": validated.declared_mime_type,
+                        "size_bytes": validated.size_bytes,
+                        "image_format": validated.image_format,
+                        "error_code": "model_unavailable",
+                        "error_message": "No trained model is loaded.",
+                    }
+                )
+                continue
+
+            # Step 2: Run actual model inference for this image.
+            started = perf_counter()
+
+            try:
+                scores = await run_in_threadpool(
+                    self._run_inference,
+                    validated.data,
+                )
+
+                predictions = self._build_candidates(scores)
+
+            except Exception:
+                logger.exception(
+                    "Batch inference failed for %s (request %s).",
+                    validated.filename,
+                    request_id,
+                )
+
+                elapsed_ms = round(
+                    (perf_counter() - started) * 1000,
+                    2,
+                )
+
+                failed_count += 1
+
+                items.append(
+                    BatchItemResult(
+                        filename=validated.filename,
+                        status="error",
+                        size_bytes=validated.size_bytes,
+                        image_format=validated.image_format,
+                        elapsed_ms=elapsed_ms,
+                        error_code="inference_error",
+                        message=INFERENCE_FAILED_MESSAGE,
+                    )
+                )
+
+                log_entries.append(
+                    {
+                        "status": "error",
+                        "filename": validated.filename,
+                        "mime_type": validated.declared_mime_type,
+                        "size_bytes": validated.size_bytes,
+                        "image_format": validated.image_format,
+                        "error_code": "inference_error",
+                        "error_message": INFERENCE_FAILED_MESSAGE,
+                    }
+                )
+                continue
+
+            elapsed_ms = round(
+                (perf_counter() - started) * 1000,
+                2,
+            )
+
+            best_prediction = predictions[0]
+            successful_count += 1
+
             items.append(
                 BatchItemResult(
                     filename=validated.filename,
-                    status="accepted",
+                    status="success",
                     size_bytes=validated.size_bytes,
                     image_format=validated.image_format,
-                    message=(
-                        "Image validated successfully. "
-                        "Batch inference has not been implemented yet."
-                    ),
+                    elapsed_ms=elapsed_ms,
+                    predictions=predictions,
+                    message="Image analyzed successfully.",
                 )
             )
 
-            # IMPORTANT:
-            # "accepted" is a batch item validation status.
-            # SQLite prediction logs only allow success, model_unavailable,
-            # rejected, and error.
             log_entries.append(
                 {
-                    "status": "model_unavailable",
+                    "status": "success",
                     "filename": validated.filename,
                     "mime_type": validated.declared_mime_type,
                     "size_bytes": validated.size_bytes,
                     "image_format": validated.image_format,
-                    "error_code": "model_unavailable",
-                    "error_message": (
-                        "Batch inference has not been implemented yet."
-                    ),
+                    "predicted_class_id": best_prediction.class_id,
+                    "predicted_class_label": best_prediction.label,
+                    "top_score": best_prediction.score,
+                    "latency_ms": elapsed_ms,
                 }
             )
 
-        final_status: Literal["model_unavailable", "rejected"] = (
-            "model_unavailable" if accepted_count > 0 else "rejected"
-        )
+        # Step 3: Determine the batch outcome.
+        final_status: Literal[
+            "success",
+            "partial_success",
+            "model_unavailable",
+            "rejected",
+            "error",
+        ]
 
+        if accepted_count == 0:
+            final_status = "rejected"
+            http_status = 400
+            message = ALL_REJECTED_MESSAGE
+            error_message: str | None = ALL_REJECTED_MESSAGE
+
+        elif not model_available:
+            final_status = "model_unavailable"
+            http_status = 503
+            message = MODEL_UNAVAILABLE_MESSAGE
+            error_message = None
+
+        elif successful_count == len(uploads):
+            final_status = "success"
+            http_status = 200
+            message = f"All {successful_count} images analyzed successfully."
+            error_message = None
+
+        elif successful_count > 0:
+            final_status = "partial_success"
+            http_status = 200
+
+            details: list[str] = []
+            if rejected_count:
+                details.append(f"{rejected_count} rejected")
+            if failed_count:
+                details.append(f"{failed_count} inference failures")
+
+            message = (
+                f"{successful_count} of {len(uploads)} images analyzed "
+                f"successfully"
+            )
+            message += f"; {'; '.join(details)}." if details else "."
+            error_message = None
+
+        else:
+            final_status = "error"
+            http_status = 500
+            message = f"Inference failed for all {accepted_count} valid images"
+            if rejected_count:
+                message += f"; {rejected_count} rejected"
+            message += "."
+            error_message = "Inference failed for all valid images."
+
+        # Step 4: Persist the batch job and per-image telemetry.
         with self.database.transaction() as connection:
             batch_id = self.batch_repository.create(
                 connection,
@@ -405,7 +542,6 @@ class PredictionService:
                 accepted_count=0,
                 rejected_count=0,
                 model_version=self.settings.model_version,
-                notes="Batch inference has not been implemented yet.",
             )
 
             for entry in log_entries:
@@ -422,6 +558,11 @@ class PredictionService:
                     error_code=entry.get("error_code"),
                     error_message=entry.get("error_message"),
                     model_version=self.settings.model_version,
+                    predicted_class_id=entry.get("predicted_class_id"),
+                    predicted_class_label=entry.get("predicted_class_label"),
+                    top_score=entry.get("top_score"),
+                    latency_ms=entry.get("latency_ms"),
+                    is_demo=False,
                 )
 
             self.batch_repository.update_outcome(
@@ -430,20 +571,12 @@ class PredictionService:
                 status=final_status,
                 accepted_count=accepted_count,
                 rejected_count=rejected_count,
-                error_message=(
-                    None if accepted_count else ALL_REJECTED_MESSAGE
-                ),
+                error_message=error_message,
             )
-
-        http_status = 503 if accepted_count > 0 else 400
 
         response = BatchPredictionResponse(
             status=final_status,
-            message=(
-                "Batch inference has not been implemented yet."
-                if accepted_count
-                else ALL_REJECTED_MESSAGE
-            ),
+            message=message,
             model_version=self.settings.model_version,
             request_id=request_id,
             batch_id=batch_id,

@@ -1,6 +1,6 @@
 export interface ClassScore {
   classId: string;
-  crop: string;
+  crop?: string | null;
   label: string;
   score: number;
 }
@@ -13,6 +13,20 @@ export interface DemoPrediction {
   isDemo: true;
   seed: string;
 }
+
+export interface RealPrediction {
+  status: 'success' | 'model_unavailable';
+  filename?: string | null;
+  latencyMs: number;
+  modelVersion: string;
+  isDemo: false;
+  classes: ClassScore[];
+  top: ClassScore;
+  message?: string;
+  requestId?: string;
+}
+
+export type FormattedPrediction = RealPrediction | DemoPrediction;
 
 export interface ImageMetadata {
   name: string;
@@ -31,4 +45,5 @@ export interface SelectedImage {
   seed: string;
   sampleClassId?: string;
   meta: ImageMetadata;
+  file?: File;
 }

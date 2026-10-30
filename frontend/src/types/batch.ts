@@ -1,4 +1,4 @@
-import type { DemoPrediction, ImageMetadata } from './prediction';
+import type { FormattedPrediction, ImageMetadata } from './prediction';
 
 export type BatchItemStatus = 'queued' | 'analyzing' | 'complete' | 'error';
 
@@ -8,8 +8,9 @@ export interface BatchItem {
   seed: string;
   sampleClassId?: string;
   meta: ImageMetadata;
+  file?: File;
   status: BatchItemStatus;
-  prediction?: DemoPrediction;
+  prediction?: FormattedPrediction;
   error?: string;
 }
 

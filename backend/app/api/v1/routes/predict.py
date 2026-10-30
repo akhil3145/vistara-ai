@@ -1,7 +1,8 @@
 """Prediction endpoints.
 
-Until a trained model is integrated in Phase 6, valid requests receive an
-explicit HTTP 503 ``model_unavailable`` response and are logged as telemetry.
+Valid images are analyzed with the loaded MobileNetV2 model. When no model is
+loaded, requests receive an explicit HTTP 503 ``model_unavailable`` response
+and are logged as telemetry.
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ router = APIRouter(tags=["prediction"])
         415: {"description": "Unsupported image type or extension"},
         503: {"description": "No trained model is loaded"},
     },
-    summary="Single-image prediction (model unavailable in Phase 4)",
+    summary="Single-image prediction with MobileNetV2 inference",
 )
 async def predict_single(
     request: Request,
@@ -45,11 +46,12 @@ async def predict_single(
     "/predict/batch",
     response_model=BatchPredictionResponse,
     responses={
+        200: {"description": "All or some images analyzed successfully"},
         400: {"description": "Batch is invalid or every file was rejected"},
-        413: {"description": "One or more images exceed the size limit"},
+        500: {"description": "Model inference failed for every valid image"},
         503: {"description": "No trained model is loaded"},
     },
-    summary="Batch-image prediction (model unavailable in Phase 4)",
+    summary="Batch-image prediction with MobileNetV2 inference",
 )
 async def predict_batch(
     request: Request,
