@@ -21,9 +21,17 @@ ENV/
 
 # Databases & Local Data
 data/
+backend/data/
+backend/model_artifacts/
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
+
+# Python test coverage artifacts
+.coverage
+htmlcov/
 
 # ML Checkpoints & Datasets (Colab training to local separation)
 *.h5
