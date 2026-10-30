@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative grape leaf with black rot lesions</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10251c"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#166534"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M320 82C414 82 508 178 508 298C508 408 426 492 320 566C214 492 132 408 132 298C132 178 226 82 320 82Z" fill="url(#leaf)" stroke="#86efac" stroke-opacity="0.3" stroke-width="4"/>
+  <path d="M320 118V530M320 286L174 196M320 286L466 196M320 286L210 410M320 286L430 410" stroke="#14532d" stroke-opacity="0.55" stroke-width="4" stroke-linecap="round"/>
+  <g opacity="0.94">
+    <circle cx="248" cy="206" r="29" fill="#78350f"/>
+    <circle cx="248" cy="206" r="21" fill="#451a03"/>
+    <circle cx="404" cy="258" r="25" fill="#78350f"/>
+    <circle cx="404" cy="258" r="17" fill="#451a03"/>
+    <circle cx="268" cy="380" r="32" fill="#78350f"/>
+    <circle cx="268" cy="380" r="22" fill="#451a03"/>
+    <circle cx="378" cy="428" r="20" fill="#78350f"/>
+    <circle cx="378" cy="428" r="13" fill="#451a03"/>
+    <circle cx="242" cy="206" r="3" fill="#1c1917"/>
+    <circle cx="258" cy="214" r="3" fill="#1c1917"/>
+    <circle cx="398" cy="264" r="3" fill="#1c1917"/>
+    <circle cx="262" cy="388" r="3" fill="#1c1917"/>
+  </g>
+  <text x="32" y="596" fill="#86efac" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>

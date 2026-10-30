@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative tomato leaf with late blight patches</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#13251c"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#166534"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M320 62C448 128 520 286 320 574C120 286 192 128 320 62Z" fill="url(#leaf)" stroke="#86efac" stroke-opacity="0.3" stroke-width="4"/>
+  <path d="M320 92V548" stroke="#14532d" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"/>
+  <path d="M320 178L418 138M320 262L448 214M320 346L458 292M320 430L428 390M320 220L218 182M320 304L196 252M320 388L206 344M320 472L226 438" stroke="#14532d" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M220 210C264 228 302 286 276 344C248 406 300 444 366 444C408 444 432 416 436 380C408 344 352 336 330 292C308 248 274 212 220 210Z" fill="#78350f" opacity="0.92"/>
+  <path d="M230 224C266 242 292 292 274 338C256 384 302 424 356 426C380 392 360 354 336 320C308 282 286 238 230 224Z" fill="#292524" opacity="0.85"/>
+  <path d="M250 250C278 272 288 306 278 338" stroke="#a8a29e" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+  <text x="32" y="596" fill="#86efac" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative apple leaf with scab lesions</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10251c"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="0.55" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M320 74C462 142 548 314 320 566C92 314 178 142 320 74Z" fill="url(#leaf)" stroke="#86efac" stroke-opacity="0.35" stroke-width="4"/>
+  <path d="M320 100V540" stroke="#166534" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M320 188L414 152M320 260L436 216M320 332L440 286M320 404L420 366M320 232L222 194M320 304L204 260M320 376L220 338M320 448L240 414" stroke="#166534" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="252" cy="238" rx="23" ry="16" fill="#3f2d16" opacity="0.9" transform="rotate(-24 252 238)"/>
+  <ellipse cx="384" cy="292" rx="19" ry="13" fill="#3f2d16" opacity="0.85" transform="rotate(18 384 292)"/>
+  <ellipse cx="286" cy="362" rx="27" ry="18" fill="#4b3418" opacity="0.9" transform="rotate(14 286 362)"/>
+  <ellipse cx="370" cy="430" rx="17" ry="12" fill="#3f2d16" opacity="0.8" transform="rotate(-12 370 430)"/>
+  <ellipse cx="232" cy="318" rx="12" ry="9" fill="#2f2312" opacity="0.85"/>
+  <text x="32" y="596" fill="#86efac" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>

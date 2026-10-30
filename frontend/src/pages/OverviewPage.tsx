@@ -5,7 +5,6 @@ import {
   Layers,
   Activity,
   BarChart3,
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
   Database,
@@ -24,7 +23,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
       subtitle="Operational command center for plant foliar screening, model status, and telemetry."
       badge={
         <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-          Ready for Inferences
+          Frontend Preview
         </span>
       }
     >
@@ -37,7 +36,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white font-mono">MobileNetV2</div>
           <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <span>224×224 RGB input</span>
+            <span>Planned 224×224 RGB input</span>
           </div>
         </div>
 
@@ -57,10 +56,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Telemetry Storage</span>
             <Database className="w-4 h-4 text-teal-500" />
           </div>
-          <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white font-mono">SQLite (Native)</div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Telemetry logging active</span>
+          <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white font-mono">SQLite (planned)</div>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Backend not connected</span>
           </div>
         </div>
 
@@ -71,7 +70,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white font-mono">Grad-CAM</div>
           <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <span>Layer: Conv_1 activation</span>
+            <span>Planned: Conv_1 activation</span>
           </div>
         </div>
       </div>

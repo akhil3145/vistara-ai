@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative healthy apple leaf</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10251c"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#86efac"/>
+      <stop offset="0.5" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M320 74C462 142 548 314 320 566C92 314 178 142 320 74Z" fill="url(#leaf)" stroke="#a7f3d0" stroke-opacity="0.4" stroke-width="4"/>
+  <path d="M320 100V540" stroke="#047857" stroke-opacity="0.65" stroke-width="5" stroke-linecap="round"/>
+  <path d="M320 188L414 152M320 260L436 216M320 332L440 286M320 404L420 366M320 232L222 194M320 304L204 260M320 376L220 338M320 448L240 414" stroke="#047857" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+  <text x="32" y="596" fill="#a7f3d0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>

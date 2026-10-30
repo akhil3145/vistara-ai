@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative tomato leaf with early blight lesions</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14261a"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M320 62C448 128 520 286 320 574C120 286 192 128 320 62Z" fill="url(#leaf)" stroke="#86efac" stroke-opacity="0.3" stroke-width="4"/>
+  <path d="M320 92V548" stroke="#166534" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M320 178L418 138M320 262L448 214M320 346L458 292M320 430L428 390M320 220L218 182M320 304L196 252M320 388L206 344M320 472L226 438" stroke="#166534" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+  <g opacity="0.92">
+    <circle cx="256" cy="248" r="31" fill="#78350f"/>
+    <circle cx="256" cy="248" r="22" fill="#92400e"/>
+    <circle cx="256" cy="248" r="12" fill="#451a03"/>
+    <circle cx="382" cy="338" r="34" fill="#78350f"/>
+    <circle cx="382" cy="338" r="24" fill="#a16207"/>
+    <circle cx="382" cy="338" r="13" fill="#451a03"/>
+    <circle cx="286" cy="430" r="24" fill="#78350f"/>
+    <circle cx="286" cy="430" r="15" fill="#92400e"/>
+  </g>
+  <text x="32" y="596" fill="#86efac" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>

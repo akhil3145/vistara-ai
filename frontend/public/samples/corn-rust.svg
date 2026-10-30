@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative corn leaf with common rust pustules</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10251c"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0" stop-color="#166534"/>
+      <stop offset="0.5" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M204 58C314 156 356 386 436 582C300 540 194 350 138 174C130 132 158 82 204 58Z" fill="url(#leaf)" stroke="#86efac" stroke-opacity="0.3" stroke-width="4"/>
+  <path d="M196 92C286 214 332 398 402 550" stroke="#14532d" stroke-opacity="0.65" stroke-width="5" stroke-linecap="round"/>
+  <path d="M220 160C278 180 318 218 346 266M236 228C292 250 330 290 360 342M256 306C310 328 344 366 370 414M278 384C326 402 356 434 380 478" stroke="#14532d" stroke-opacity="0.42" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#b45309" opacity="0.95">
+    <ellipse cx="250" cy="182" rx="12" ry="7" transform="rotate(32 250 182)"/>
+    <ellipse cx="300" cy="238" rx="13" ry="7" transform="rotate(28 300 238)"/>
+    <ellipse cx="330" cy="318" rx="12" ry="7" transform="rotate(24 330 318)"/>
+    <ellipse cx="292" cy="292" rx="10" ry="6" transform="rotate(18 292 292)"/>
+    <ellipse cx="354" cy="392" rx="13" ry="8" transform="rotate(30 354 392)"/>
+    <ellipse cx="318" cy="452" rx="11" ry="6" transform="rotate(16 318 452)"/>
+    <ellipse cx="388" cy="478" rx="10" ry="6" transform="rotate(28 388 478)"/>
+    <ellipse cx="270" cy="340" rx="9" ry="5" transform="rotate(22 270 340)"/>
+  </g>
+  <text x="32" y="596" fill="#86efac" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>

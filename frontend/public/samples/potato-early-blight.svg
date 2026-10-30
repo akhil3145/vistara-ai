@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative potato leaf with early blight lesions</title>
+  <desc id="desc">A generated illustration for interface demonstration. It is not a photograph or a dataset image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12231b"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="36" fill="url(#bg)"/>
+  <path d="M320 54C440 128 510 300 320 586C130 300 200 128 320 54Z" fill="url(#leaf)" stroke="#86efac" stroke-opacity="0.3" stroke-width="4"/>
+  <path d="M320 86V552" stroke="#166534" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M320 168L408 128M320 246L438 198M320 324L448 276M320 402L428 356M320 480L410 440M320 210L232 170M320 288L210 242M320 366L214 320M320 444L228 404" stroke="#166534" stroke-opacity="0.42" stroke-width="3" stroke-linecap="round"/>
+  <g opacity="0.94">
+    <circle cx="254" cy="236" r="34" fill="#78350f"/>
+    <circle cx="254" cy="236" r="25" fill="#a16207"/>
+    <circle cx="254" cy="236" r="16" fill="#713f12"/>
+    <circle cx="254" cy="236" r="7" fill="#451a03"/>
+    <circle cx="386" cy="342" r="28" fill="#78350f"/>
+    <circle cx="386" cy="342" r="20" fill="#a16207"/>
+    <circle cx="386" cy="342" r="12" fill="#713f12"/>
+    <circle cx="298" cy="438" r="22" fill="#78350f"/>
+    <circle cx="298" cy="438" r="14" fill="#a16207"/>
+    <circle cx="298" cy="438" r="7" fill="#713f12"/>
+  </g>
+  <text x="32" y="596" fill="#86efac" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" opacity="0.85">Illustrative SVG - demo asset</text>
+</svg>
