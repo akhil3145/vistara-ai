@@ -1,17 +1,22 @@
+
 """Prediction request orchestration.
 
-Phase 4 has no trained model. These methods validate uploads, write honest
-telemetry rows (attempts and rejections), and return explicit
-``model_unavailable`` responses instead of fabricated predictions.
+Validates uploaded images, runs MobileNetV2 inference,
+and records prediction telemetry in SQLite.
 """
 
 from __future__ import annotations
 
+import logging
+from io import BytesIO
 from time import perf_counter
 from typing import Any, Literal
 from uuid import uuid4
 
+import numpy as np
 from fastapi import UploadFile
+from PIL import Image
+from starlette.concurrency import run_in_threadpool
 
 from ..config import Settings
 from ..database import Database
@@ -21,22 +26,30 @@ from ..repositories.prediction_repository import PredictionLogRepository
 from ..schemas.prediction import (
     BatchItemResult,
     BatchPredictionResponse,
+    PredictionCandidate,
     PredictionUnavailableResponse,
 )
 from .image_validation import validate_image_upload
 from .model_service import UNLOADED_MESSAGE, ModelService
 
+
+logger = logging.getLogger(__name__)
+
 MODEL_UNAVAILABLE_MESSAGE = (
     "The model is unavailable, so no prediction was produced. "
     + UNLOADED_MESSAGE
 )
+
 ALL_REJECTED_MESSAGE = (
     "Every uploaded file was rejected before inference. No model was called."
 )
 
+TOP_K = 5
+IMAGE_SIZE = (224, 224)
+
 
 class PredictionService:
-    """Validates uploads, records telemetry, and reports model availability."""
+    """Validates uploads, performs inference, and records telemetry."""
 
     def __init__(
         self,
@@ -52,16 +65,114 @@ class PredictionService:
         self.prediction_repository = prediction_repository
         self.batch_repository = batch_repository
 
+    @staticmethod
+    def _prepare_image(data: bytes) -> np.ndarray:
+        """Decode and preprocess an image for MobileNetV2."""
+
+        import tensorflow as tf
+
+        from tensorflow.keras.applications.mobilenet_v2 import (
+            preprocess_input,
+        )
+
+        with Image.open(BytesIO(data)) as image:
+            image = image.convert("RGB")
+            image_array = np.asarray(image, dtype=np.float32)
+
+        resized = tf.image.resize(
+            image_array,
+            IMAGE_SIZE,
+            method="bilinear",
+        ).numpy()
+
+        preprocessed = preprocess_input(resized)
+
+        return np.expand_dims(preprocessed, axis=0)
+
+    def _run_inference(self, data: bytes) -> np.ndarray:
+        """Run the loaded model and return its class scores."""
+
+        model = self.model_service.model
+
+        if model is None:
+            raise RuntimeError("The prediction model is not loaded.")
+
+        image_batch = self._prepare_image(data)
+
+        output = model.predict(image_batch, verbose=0)
+        scores = np.asarray(output, dtype=np.float32)
+
+        expected_classes = len(self.model_service.class_names)
+
+        if scores.shape != (1, expected_classes):
+            raise ValueError(
+                f"Unexpected model output shape: {scores.shape}"
+            )
+
+        scores = scores[0]
+
+        if not np.all(np.isfinite(scores)):
+            raise ValueError(
+                "Model returned non-finite prediction scores."
+            )
+
+        if np.any(scores < 0) or np.any(scores > 1):
+            raise ValueError(
+                "Model returned scores outside the expected range."
+            )
+
+        return scores
+
+    def _build_candidates(
+        self,
+        scores: np.ndarray,
+    ) -> list[PredictionCandidate]:
+        """Convert model scores into the top five predictions."""
+
+        class_names = self.model_service.class_names
+
+        top_indices = np.argsort(scores)[::-1][:TOP_K]
+
+        predictions: list[PredictionCandidate] = []
+
+        for index in top_indices:
+            raw_class_name = class_names[int(index)]
+
+            if "___" in raw_class_name:
+                crop, label = raw_class_name.split("___", 1)
+            else:
+                crop = None
+                label = raw_class_name
+
+            predictions.append(
+                PredictionCandidate(
+                    class_id=str(int(index)),
+                    crop=crop.replace("_", " ") if crop else None,
+                    label=label.replace("_", " "),
+                    score=float(scores[index]),
+                )
+            )
+
+        return predictions
+
     async def predict_single(
-        self, upload: UploadFile
+        self,
+        upload: UploadFile,
     ) -> tuple[PredictionUnavailableResponse, int]:
+
         request_id = uuid4().hex
         started = perf_counter()
 
+        # Step 1: Validate the uploaded image.
         try:
-            validated = await validate_image_upload(upload, self.settings)
+            validated = await validate_image_upload(
+                upload,
+                self.settings,
+            )
+
         except ImageValidationError as exc:
             context = exc.context or {}
+
             with self.database.transaction() as connection:
                 self.prediction_repository.create(
                     connection,
@@ -74,40 +185,108 @@ class PredictionService:
                     error_code=exc.code,
                     error_message=exc.message,
                 )
+
             raise
 
-        elapsed_ms = round((perf_counter() - started) * 1000, 2)
+        # Step 2: Check model readiness.
+        if not self.model_service.is_loaded:
+            elapsed_ms = round(
+                (perf_counter() - started) * 1000,
+                2,
+            )
+
+            with self.database.transaction() as connection:
+                self.prediction_repository.create(
+                    connection,
+                    request_id=request_id,
+                    source="single",
+                    status="model_unavailable",
+                    filename=validated.filename,
+                    mime_type=validated.declared_mime_type,
+                    size_bytes=validated.size_bytes,
+                    image_format=validated.image_format,
+                    error_code="model_unavailable",
+                    error_message="No trained model is loaded.",
+                    model_version=self.settings.model_version,
+                )
+
+            return (
+                PredictionUnavailableResponse(
+                    status="model_unavailable",
+                    message=MODEL_UNAVAILABLE_MESSAGE,
+                    model_version=self.settings.model_version,
+                    request_id=request_id,
+                    filename=validated.filename,
+                    elapsed_ms=elapsed_ms,
+                    predictions=[],
+                    logged=True,
+                ),
+                503,
+            )
+
+        # Step 3: Run actual model inference.
+        try:
+            scores = await run_in_threadpool(
+                self._run_inference,
+                validated.data,
+            )
+
+            predictions = self._build_candidates(scores)
+
+        except Exception:
+            logger.exception(
+                "Inference failed for request %s.",
+                request_id,
+            )
+            raise
+
+        elapsed_ms = round(
+            (perf_counter() - started) * 1000,
+            2,
+        )
+
+        # Step 4: Record the actual prediction in SQLite.
+        best_prediction = predictions[0]
+
         with self.database.transaction() as connection:
             self.prediction_repository.create(
                 connection,
                 request_id=request_id,
                 source="single",
-                status="model_unavailable",
+                status="success",
                 filename=validated.filename,
                 mime_type=validated.declared_mime_type,
                 size_bytes=validated.size_bytes,
                 image_format=validated.image_format,
-                error_code="model_unavailable",
-                error_message="No trained model is loaded.",
+                predicted_class_id=best_prediction.class_id,
+                predicted_class_label=best_prediction.label,
+                top_score=best_prediction.score,
+                latency_ms=elapsed_ms,
                 model_version=self.settings.model_version,
+                is_demo=False,
             )
 
+        # Step 5: Return genuine predictions.
         return (
             PredictionUnavailableResponse(
-                message=MODEL_UNAVAILABLE_MESSAGE,
+                status="success",
+                message="Image analyzed successfully.",
                 model_version=self.settings.model_version,
                 request_id=request_id,
                 filename=validated.filename,
                 elapsed_ms=elapsed_ms,
-                predictions=[],
+                predictions=predictions,
                 logged=True,
             ),
-            503,
+            200,
         )
 
     async def predict_batch(
-        self, uploads: list[UploadFile]
+        self,
+        uploads: list[UploadFile],
     ) -> tuple[BatchPredictionResponse, int]:
+        """Validate batch uploads; batch inference is not implemented yet."""
+
         if len(uploads) > self.settings.max_batch_files:
             raise BatchValidationError(
                 status_code=400,
@@ -116,26 +295,45 @@ class PredictionService:
                     f"Batch contains {len(uploads)} files; the configured limit "
                     f"is {self.settings.max_batch_files}."
                 ),
-                context={"fileCount": len(uploads), "maxFiles": self.settings.max_batch_files},
+                context={
+                    "fileCount": len(uploads),
+                    "maxFiles": self.settings.max_batch_files,
+                },
             )
 
         request_id = uuid4().hex
         accepted_count = 0
         rejected_count = 0
+
         items: list[BatchItemResult] = []
         log_entries: list[dict[str, Any]] = []
 
         for upload in uploads:
             try:
-                validated = await validate_image_upload(upload, self.settings)
+                validated = await validate_image_upload(
+                    upload,
+                    self.settings,
+                )
+
             except ImageValidationError as exc:
                 context = exc.context or {}
+
                 rejected_count += 1
-                filename = str(context.get("filename") or upload.filename or "upload")
+
+                filename = str(
+                    context.get("filename") or upload.filename or "upload"
+                )
+
                 raw_size = context.get("sizeBytes")
-                rejected_size = raw_size if isinstance(raw_size, int) else None
+                rejected_size = (
+                    raw_size if isinstance(raw_size, int) else None
+                )
+
                 raw_format = context.get("imageFormat")
-                rejected_format = raw_format if isinstance(raw_format, str) else None
+                rejected_format = (
+                    raw_format if isinstance(raw_format, str) else None
+                )
+
                 items.append(
                     BatchItemResult(
                         filename=filename,
@@ -146,6 +344,7 @@ class PredictionService:
                         message=exc.message,
                     )
                 )
+
                 log_entries.append(
                     {
                         "status": "rejected",
@@ -157,19 +356,28 @@ class PredictionService:
                         "error_message": exc.message,
                     }
                 )
+
                 continue
 
             accepted_count += 1
+
             items.append(
                 BatchItemResult(
                     filename=validated.filename,
                     status="accepted",
                     size_bytes=validated.size_bytes,
                     image_format=validated.image_format,
-                    error_code="model_unavailable",
-                    message="Validated successfully; no trained model is loaded.",
+                    message=(
+                        "Image validated successfully. "
+                        "Batch inference has not been implemented yet."
+                    ),
                 )
             )
+
+            # IMPORTANT:
+            # "accepted" is a batch item validation status.
+            # SQLite prediction logs only allow success, model_unavailable,
+            # rejected, and error.
             log_entries.append(
                 {
                     "status": "model_unavailable",
@@ -178,13 +386,16 @@ class PredictionService:
                     "size_bytes": validated.size_bytes,
                     "image_format": validated.image_format,
                     "error_code": "model_unavailable",
-                    "error_message": "No trained model is loaded.",
+                    "error_message": (
+                        "Batch inference has not been implemented yet."
+                    ),
                 }
             )
 
         final_status: Literal["model_unavailable", "rejected"] = (
             "model_unavailable" if accepted_count > 0 else "rejected"
         )
+
         with self.database.transaction() as connection:
             batch_id = self.batch_repository.create(
                 connection,
@@ -194,8 +405,9 @@ class PredictionService:
                 accepted_count=0,
                 rejected_count=0,
                 model_version=self.settings.model_version,
-                notes="Phase 4 telemetry: no model loaded.",
+                notes="Batch inference has not been implemented yet.",
             )
+
             for entry in log_entries:
                 self.prediction_repository.create(
                     connection,
@@ -211,19 +423,27 @@ class PredictionService:
                     error_message=entry.get("error_message"),
                     model_version=self.settings.model_version,
                 )
+
             self.batch_repository.update_outcome(
                 connection,
                 batch_id=batch_id,
                 status=final_status,
                 accepted_count=accepted_count,
                 rejected_count=rejected_count,
-                error_message=None if accepted_count else ALL_REJECTED_MESSAGE,
+                error_message=(
+                    None if accepted_count else ALL_REJECTED_MESSAGE
+                ),
             )
 
         http_status = 503 if accepted_count > 0 else 400
+
         response = BatchPredictionResponse(
             status=final_status,
-            message=MODEL_UNAVAILABLE_MESSAGE if accepted_count else ALL_REJECTED_MESSAGE,
+            message=(
+                "Batch inference has not been implemented yet."
+                if accepted_count
+                else ALL_REJECTED_MESSAGE
+            ),
             model_version=self.settings.model_version,
             request_id=request_id,
             batch_id=batch_id,
@@ -234,4 +454,5 @@ class PredictionService:
             predictions=[],
             logged=True,
         )
+
         return response, http_status

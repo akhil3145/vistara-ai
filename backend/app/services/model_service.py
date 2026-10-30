@@ -1,8 +1,5 @@
-"""Model readiness and evaluation artifact reporting.
 
-No model is loaded in Phase 4. This service reports that honestly and only
-surfaces artifacts that actually exist on disk.
-"""
+"""Model loading, readiness, artifact validation, and evaluation reporting."""
 
 from __future__ import annotations
 
@@ -17,35 +14,111 @@ from ..schemas.model import ArtifactStatus, ModelInfoResponse, ModelReportRespon
 
 logger = logging.getLogger(__name__)
 
-PLANNED_CLASS_COUNT = 38
-EXPECTED_ARTIFACTS = (
-    "model_checkpoint.keras",
-    "classes.json",
-    "preprocess_config.json",
-    "model_metadata.json",
-    "evaluation_report.json",
-)
+EXPECTED_CLASS_COUNT = 38
+MODEL_FILENAME = "best_vistara_model.keras"
+CLASSES_FILENAME = "classes.json"
 EVALUATION_REPORT_FILENAME = "evaluation_report.json"
-UNLOADED_MESSAGE = (
-    "No trained model is loaded. Real inference will be added in Phase 6 after "
-    "training in Google Colab. No predictions are produced or simulated here."
+
+EXPECTED_ARTIFACTS = (
+    MODEL_FILENAME,
+    CLASSES_FILENAME,
+    EVALUATION_REPORT_FILENAME,
 )
+
+UNLOADED_MESSAGE = "The trained model is not loaded. Check model artifacts and startup logs."
 
 
 class ModelService:
-    """Reports model and artifact status without loading TensorFlow."""
+    """Loads the trained Keras model once and exposes its metadata."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.artifacts_dir = Path(settings.model_artifacts_dir)
+        self.model: Any | None = None
+        self.class_names: list[str] = []
+        self.load_error: str | None = None
+
+    @property
+    def is_loaded(self) -> bool:
+        return (
+            self.model is not None
+            and len(self.class_names) == EXPECTED_CLASS_COUNT
+        )
+
+    def load_model(self) -> bool:
+        """Load and validate the trained model and class mapping."""
+        if self.is_loaded:
+            return True
+
+        self.model = None
+        self.class_names = []
+        self.load_error = None
+
+        model_path = self.artifacts_dir / MODEL_FILENAME
+        classes_path = self.artifacts_dir / CLASSES_FILENAME
+
+        try:
+            if not model_path.is_file():
+                raise FileNotFoundError(f"Model not found: {model_path}")
+
+            if not classes_path.is_file():
+                raise FileNotFoundError(f"Classes file not found: {classes_path}")
+
+            with classes_path.open("r", encoding="utf-8") as handle:
+                mapping = json.load(handle)
+
+            expected_keys = {str(i) for i in range(EXPECTED_CLASS_COUNT)}
+
+            if not isinstance(mapping, dict) or set(mapping) != expected_keys:
+                raise ValueError("classes.json must contain exactly keys 0 through 37.")
+
+            class_names = [mapping[str(i)] for i in range(EXPECTED_CLASS_COUNT)]
+
+            if not all(isinstance(name, str) and name.strip() for name in class_names):
+                raise ValueError("Every class name must be a non-empty string.")
+
+            import tensorflow as tf
+
+            loaded_model = tf.keras.models.load_model(
+                model_path,
+                compile=False,
+            )
+
+            input_shape = loaded_model.input_shape
+            output_shape = loaded_model.output_shape
+
+            if isinstance(input_shape, list) or isinstance(output_shape, list):
+                raise ValueError("Multiple model inputs or outputs are unsupported.")
+
+            if tuple(input_shape[1:]) != (224, 224, 3):
+                raise ValueError(f"Unexpected model input shape: {input_shape}")
+
+            if output_shape[-1] != EXPECTED_CLASS_COUNT:
+                raise ValueError(f"Unexpected model output shape: {output_shape}")
+
+            self.model = loaded_model
+            self.class_names = class_names
+
+            logger.info("Loaded MobileNetV2 with %d classes.", len(class_names))
+            return True
+
+        except Exception as exc:
+            self.model = None
+            self.class_names = []
+            self.load_error = str(exc)
+            logger.exception("Failed to load Vistara AI model.")
+            return False
 
     def _artifact_status(self) -> ArtifactStatus:
         directory = self.artifacts_dir
-        if directory.exists():
-            found = [name for name in EXPECTED_ARTIFACTS if (directory / name).is_file()]
-        else:
-            found = []
+
+        found = (
+            [name for name in EXPECTED_ARTIFACTS if (directory / name).is_file()]
+            if directory.exists()
+            else []
+        )
         missing = [name for name in EXPECTED_ARTIFACTS if name not in found]
+
         return ArtifactStatus(
             directory=str(directory),
             expected_files=list(EXPECTED_ARTIFACTS),
@@ -55,41 +128,54 @@ class ModelService:
         )
 
     def get_readiness(self) -> ModelReadiness:
+        if self.is_loaded:
+            return ModelReadiness(
+                status="loaded",
+                loaded=True,
+                version=self.settings.model_version,
+                message="MobileNetV2 model loaded successfully.",
+            )
+
         return ModelReadiness(
-            status="not_trained",
+            status="unavailable" if self.load_error else "not_trained",
             loaded=False,
             version=self.settings.model_version,
-            message=UNLOADED_MESSAGE,
+            message=self.load_error or UNLOADED_MESSAGE,
         )
 
     def get_info(self) -> ModelInfoResponse:
+        loaded = self.is_loaded
+
         return ModelInfoResponse(
-            status="not_trained",
-            loaded=False,
+            status="loaded" if loaded else (
+                "unavailable" if self.load_error else "not_trained"
+            ),
+            loaded=loaded,
             version=self.settings.model_version,
-            architecture="MobileNetV2 (planned; not loaded)",
+            architecture="MobileNetV2",
             input_shape=[224, 224, 3],
-            planned_class_count=PLANNED_CLASS_COUNT,
-            supported_classes=[],
-            class_list_status="unavailable",
+            planned_class_count=EXPECTED_CLASS_COUNT,
+            supported_classes=self.class_names if loaded else [],
+            class_list_status="loaded" if loaded else "unavailable",
             artifacts=self._artifact_status(),
-            message=UNLOADED_MESSAGE,
+            message=(
+                "MobileNetV2 model is ready for inference."
+                if loaded
+                else self.load_error or UNLOADED_MESSAGE
+            ),
         )
 
     def get_report(self) -> ModelReportResponse:
         artifacts = self._artifact_status()
         report_path = self.artifacts_dir / EVALUATION_REPORT_FILENAME
+
         if not artifacts.evaluation_report_present:
             return ModelReportResponse(
                 available=False,
                 status="unavailable",
                 generated_at=None,
                 source=str(report_path),
-                message=(
-                    "No verified evaluation_report.json is present. Held-out test "
-                    "metrics, per-class values, confusion matrices, and learning "
-                    "curves are intentionally empty."
-                ),
+                message="No evaluation report is present.",
                 artifacts=artifacts,
                 report=None,
             )
@@ -97,31 +183,18 @@ class ModelService:
         try:
             with report_path.open("r", encoding="utf-8") as handle:
                 payload: Any = json.load(handle)
-        except (OSError, json.JSONDecodeError) as exc:
-            logger.warning("Unable to read evaluation report %s: %s", report_path, exc)
-            return ModelReportResponse(
-                available=False,
-                status="unavailable",
-                generated_at=None,
-                source=str(report_path),
-                message=(
-                    "An evaluation report file exists but could not be parsed. "
-                    "No metric values are returned until the artifact is valid."
-                ),
-                artifacts=artifacts,
-                report=None,
-            )
 
-        if not isinstance(payload, dict):
+            if not isinstance(payload, dict):
+                raise ValueError("Evaluation report must be a JSON object.")
+
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            logger.warning("Unable to read evaluation report: %s", exc)
             return ModelReportResponse(
                 available=False,
                 status="unavailable",
                 generated_at=None,
                 source=str(report_path),
-                message=(
-                    "The evaluation report is not a JSON object and cannot be "
-                    "served as structured metrics."
-                ),
+                message=f"Evaluation report could not be read: {exc}",
                 artifacts=artifacts,
                 report=None,
             )
@@ -131,10 +204,7 @@ class ModelService:
             status="available",
             generated_at=None,
             source=str(report_path),
-            message=(
-                "Verified evaluation_report.json loaded from the artifact "
-                "directory. Values are returned exactly as exported."
-            ),
+            message="Evaluation report loaded from training artifacts.",
             artifacts=artifacts,
             report=payload,
         )

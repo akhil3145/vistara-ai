@@ -1,7 +1,8 @@
+
 """Prediction endpoint schemas.
 
-Phase 4 does not load a trained model. Response models therefore describe
-explicit unavailable states and reject fabricated predictions.
+Supports real model predictions, unavailable model states,
+and batch inference results.
 """
 
 from __future__ import annotations
@@ -14,14 +15,18 @@ from .common import CamelModel
 
 
 class PredictionCandidate(CamelModel):
+    """One predicted plant disease class."""
+
     class_id: str
     crop: str | None = None
     label: str | None = None
-    score: float
+    score: float = Field(ge=0.0, le=1.0)
 
 
 class PredictionUnavailableResponse(CamelModel):
-    status: Literal["model_unavailable"] = "model_unavailable"
+    """Single-image prediction response."""
+
+    status: Literal["success", "model_unavailable"] = "model_unavailable"
     message: str
     model_version: str | None = None
     is_demo: Literal[False] = False
@@ -33,16 +38,28 @@ class PredictionUnavailableResponse(CamelModel):
 
 
 class BatchItemResult(CamelModel):
+    """Result for an individual image in a batch."""
+
     filename: str
-    status: Literal["accepted", "rejected"]
+    status: Literal["success", "accepted", "rejected", "model_unavailable"]
     size_bytes: int | None = None
     image_format: str | None = None
+    elapsed_ms: float | None = None
+    predictions: list[PredictionCandidate] = Field(default_factory=list)
     error_code: str | None = None
     message: str | None = None
 
 
 class BatchPredictionResponse(CamelModel):
-    status: Literal["model_unavailable", "rejected"] = "model_unavailable"
+    """Batch prediction response."""
+
+    status: Literal[
+        "success",
+        "partial_success",
+        "model_unavailable",
+        "rejected",
+    ] = "model_unavailable"
+
     message: str
     model_version: str | None = None
     is_demo: Literal[False] = False

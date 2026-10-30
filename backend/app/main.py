@@ -64,6 +64,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except DatabaseError as exc:
             app.state.database_init_error = str(exc)
             logger.error("Database initialization failed: %s", exc)
+
+        # Load the trained model once during normal application startup.
+        # Tests remain isolated from the local model artifacts.
+        if resolved_settings.environment != "test":
+            model_service.load_model()
+        else:
+            logger.info("Skipping model loading in test environment.")
+
         yield
 
     application = FastAPI(
@@ -108,7 +116,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     @application.exception_handler(DatabaseError)
-    async def handle_database_error(_: Request, exc: DatabaseError) -> JSONResponse:
+    async def handle_database_error(
+        _: Request, exc: DatabaseError
+    ) -> JSONResponse:
         logger.exception("Database error while handling request", exc_info=exc)
         payload = ApiErrorResponse(
             error=ApiErrorDetail(
@@ -122,7 +132,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     @application.exception_handler(sqlite3.Error)
-    async def handle_sqlite_error(_: Request, exc: sqlite3.Error) -> JSONResponse:
+    async def handle_sqlite_error(
+        _: Request, exc: sqlite3.Error
+    ) -> JSONResponse:
         logger.exception("SQLite error while handling request", exc_info=exc)
         payload = ApiErrorResponse(
             error=ApiErrorDetail(

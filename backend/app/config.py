@@ -37,9 +37,8 @@ class Settings(BaseSettings):
     database_path: Path = Field(default=BACKEND_DIR / "data" / "vistara.db")
     database_busy_timeout_seconds: float = 5.0
 
-    model_artifacts_dir: Path = Field(default=BACKEND_DIR / "model_artifacts")
+    model_artifacts_dir: Path = Field(default=BACKEND_DIR / "data" / "model")
     model_version: str | None = None
-
     max_upload_size_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     max_batch_files: int = Field(default=24, gt=0)
 
