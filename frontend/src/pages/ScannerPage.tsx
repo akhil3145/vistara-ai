@@ -252,16 +252,26 @@ export const ScannerPage: React.FC = () => {
         </span>
       }
       actions={
-        prediction && !prediction.isDemo ? (
-          <span className="rounded border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-600 dark:text-teal-400">
-            REAL INFERENCE
-          </span>
-        ) : (
-          <DemoBadge label="DEMO MODE" />
-        )
+        status === 'analyzing' ? (
+          <DemoBadge label="ANALYZING" />
+        ) : status === 'error' ? (
+          <DemoBadge label="ANALYSIS ERROR" />
+        ) : prediction ? (
+          prediction.isDemo ? (
+            <DemoBadge label="DEMO SAMPLE" />
+          ) : (
+            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-600 dark:text-teal-400">
+              REAL INFERENCE
+            </span>
+          )
+        ) : image?.meta.source === 'upload' ? (
+          <DemoBadge label="READY TO ANALYZE" />
+        ) : image?.meta.source === 'sample' ? (
+          <DemoBadge label="DEMO SAMPLE" />
+        ) : null
       }
     >
-      {/* Informative banner distinguishing real vs demo */}
+      {/* Explain the source and execution mode without mislabelling pending uploads. */}
       {prediction && !prediction.isDemo ? (
         <div
           role="status"
@@ -273,18 +283,29 @@ export const ScannerPage: React.FC = () => {
             <p className="leading-relaxed text-teal-800/90 dark:text-teal-300/90">
               This prediction was produced by the local FastAPI backend using
               MobileNetV2 over the PlantVillage 38-class benchmark. Inference
-              latency was measured directly on the server.
+              latency was measured directly on the server. The model score is
+              not a verified diagnosis.
             </p>
           </div>
         </div>
-      ) : (
-        <DemoBanner title="Simulated demonstration mode">
-          Uploaded images are classified live by the FastAPI backend (
-          <code>POST /api/v1/predict</code>). Curated sample gallery SVGs
-          remain illustrative demo assets for layout preview. Click &quot;Analyze
-          Leaf&quot; to execute inference.
+      ) : image?.meta.source === 'sample' ? (
+        <DemoBanner title="Illustrative sample — simulated result">
+          This gallery image is an illustrative SVG asset. Its prediction and
+          scores are generated locally for demonstration and are not produced
+          by the trained model.
         </DemoBanner>
-      )}
+      ) : image?.meta.source === 'upload' ? (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 text-xs text-sky-900 dark:text-sky-200">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+          <div className="space-y-0.5">
+            <span className="font-semibold">Uploaded image ready for backend analysis</span>
+            <p className="leading-relaxed text-sky-800/90 dark:text-sky-300/90">
+              Click &quot;Analyze Leaf&quot; to send this image to the FastAPI
+              backend (<code>POST /api/v1/predict</code>) for MobileNetV2 inference.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {inputError && (
         <div

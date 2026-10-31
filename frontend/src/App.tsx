@@ -12,11 +12,35 @@ import { MonitoringPage } from './pages/MonitoringPage';
 import { ModelReportPage } from './pages/ModelReportPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { HelpPage } from './pages/HelpPage';
+import { useEffect } from 'react';
+import { checkBackendHealth } from './services/healthService';
 
 export function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isBackendReady, setIsBackendReady] = useState(false);
+  useEffect(() => {
+  let active = true;
 
+  const checkHealth = async () => {
+    const healthy = await checkBackendHealth();
+
+    if (active) {
+      setIsBackendReady(healthy);
+    }
+  };
+
+  void checkHealth();
+
+  const interval = window.setInterval(() => {
+    void checkHealth();
+  }, 15000);
+
+  return () => {
+    active = false;
+    window.clearInterval(interval);
+  };
+}, []);
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'overview':
@@ -60,7 +84,7 @@ export function App() {
           <Header
             currentPage={currentPage}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
-            isDemoMode={true}
+            isDemoMode={!isBackendReady}
           />
           <main className="flex-1 overflow-y-auto">
             {renderCurrentPage()}

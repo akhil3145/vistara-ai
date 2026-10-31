@@ -546,6 +546,29 @@ export const BatchPage: React.FC = () => {
   const hasRealInferences = items.some(
     (item) => item.prediction && !item.prediction.isDemo,
   );
+  const hasDemoPredictions = items.some(
+    (item) => item.prediction?.isDemo === true,
+  );
+  const hasMixedResults = hasRealInferences && hasDemoPredictions;
+  const hasQueuedItems = items.some((item) => item.status === 'queued');
+  const hasErrors = items.some((item) => item.status === 'error');
+  const allItemsFailed = items.length > 0 && items.every((item) => item.status === 'error');
+
+  const batchStatusLabel = isRunning
+    ? 'ANALYZING'
+    : hasMixedResults
+      ? 'MIXED RESULTS'
+      : hasRealInferences
+        ? 'REAL INFERENCE'
+        : hasDemoPredictions
+          ? 'DEMO DATA'
+          : allItemsFailed
+            ? 'ANALYSIS ERROR'
+            : hasQueuedItems
+              ? 'READY TO ANALYZE'
+              : items.length > 0 && hasErrors
+                ? 'PARTIAL / ERRORS'
+                : 'READY';
 
   return (
     <PageContainer
@@ -558,12 +581,12 @@ export const BatchPage: React.FC = () => {
       }
       actions={
         <>
-          {hasRealInferences ? (
+          {batchStatusLabel === 'REAL INFERENCE' ? (
             <span className="rounded border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-600 dark:text-teal-400">
-              REAL INFERENCE
+              {batchStatusLabel}
             </span>
           ) : (
-            <DemoBadge label="DEMO MODE" />
+            <DemoBadge label={batchStatusLabel} />
           )}
           <button
             type="button"
@@ -577,31 +600,37 @@ export const BatchPage: React.FC = () => {
         </>
       }
     >
-      {/* Informative mode banner */}
-      {hasRealInferences ? (
-        <div
-          role="status"
-          className="flex items-start gap-3 rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 text-xs text-teal-900 dark:text-teal-200"
-        >
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+      {/* Contextual banner: distinguish queued uploads, real results, and simulated samples. */}
+      {hasMixedResults ? (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 text-xs text-sky-900 dark:text-sky-200">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
           <div className="space-y-0.5">
-            <span className="font-semibold">Backend Batch Inference Active</span>
-            <p className="leading-relaxed text-teal-800/90 dark:text-teal-300/90">
-              Uploaded leaf images are classified live by the FastAPI backend (
-              <code>POST /api/v1/predict/batch</code>) using MobileNetV2. Latencies
-              and top-5 scores reflect genuine server execution. Illustrative SVG
-              samples are processed separately as demo data.
-            </p>
+            <span className="font-semibold">Mixed batch results</span>
+            <p className="leading-relaxed">Uploaded photographs were processed by the FastAPI MobileNetV2 backend. Illustrative SVG samples were simulated locally; those sample scores are demo data.</p>
           </div>
         </div>
-      ) : (
-        <DemoBanner title="Batch analysis mode">
-          Uploaded foliar images are sent to the FastAPI backend (
-          <code>POST /api/v1/predict/batch</code>) for live MobileNetV2 inference.
-          Illustrative sample gallery SVGs remain demo assets. Click &quot;Run batch
-          analysis&quot; to execute.
+      ) : hasRealInferences ? (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 text-xs text-teal-900 dark:text-teal-200">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+          <div className="space-y-0.5">
+            <span className="font-semibold">Backend Batch Inference Results</span>
+            <p className="leading-relaxed text-teal-800/90 dark:text-teal-300/90">Successful uploaded-image predictions were produced by the FastAPI backend (<code>POST /api/v1/predict/batch</code>) using MobileNetV2. Illustrative SVG samples, if present, are simulated separately.</p>
+          </div>
+        </div>
+      ) : hasDemoPredictions || items.some((item) => item.meta.source === 'sample') ? (
+        <DemoBanner title="Illustrative demo samples">
+          Gallery SVG assets are simulated locally. Their predictions and scores are
+          demonstration data, not output from the trained MobileNetV2 model.
         </DemoBanner>
-      )}
+      ) : items.some((item) => item.meta.source === 'upload') ? (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 text-xs text-sky-900 dark:text-sky-200">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+          <div className="space-y-0.5">
+            <span className="font-semibold">Uploaded images queued for analysis</span>
+            <p className="leading-relaxed">Click &quot;Run batch analysis&quot; to send queued photographs to the FastAPI backend (<code>POST /api/v1/predict/batch</code>) for MobileNetV2 inference.</p>
+          </div>
+        </div>
+      ) : null}
 
       {inputErrors.length > 0 && (
         <div
@@ -638,13 +667,13 @@ export const BatchPage: React.FC = () => {
           >
             Batch Summary
           </h3>
-          {hasRealInferences ? (
-            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-600 dark:text-teal-400">
-              REAL INFERENCE
-            </span>
-          ) : (
+          {hasMixedResults ? (
+            <DemoBadge label="MIXED RESULTS" />
+          ) : hasRealInferences ? (
+            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-600 dark:text-teal-400">REAL INFERENCE</span>
+          ) : hasDemoPredictions ? (
             <DemoBadge label="DEMO DATA" />
-          )}
+          ) : null}
         </div>
         <BatchKpis items={items} threshold={threshold} />
       </section>
