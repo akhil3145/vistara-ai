@@ -1,3 +1,4 @@
+
 export interface ClassScore {
   classId: string;
   crop?: string | null;
@@ -24,6 +25,7 @@ export interface RealPrediction {
   top: ClassScore;
   message?: string;
   requestId?: string;
+  gradcamImage?: string | null;
 }
 
 export type FormattedPrediction = RealPrediction | DemoPrediction;

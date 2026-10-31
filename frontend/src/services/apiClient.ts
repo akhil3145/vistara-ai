@@ -21,6 +21,7 @@ export interface SinglePredictionResponseDto {
   isDemo: false;
   requestId: string;
   filename: string | null;
+  gradcamImage?: string | null;
   elapsedMs: number | null;
   predictions: PredictionCandidateDto[];
   logged: boolean;
@@ -345,5 +346,6 @@ export function mapBackendPrediction(
     top,
     message: dto.message,
     requestId: dto.requestId,
+    gradcamImage: dto.gradcamImage ?? null,
   };
 }

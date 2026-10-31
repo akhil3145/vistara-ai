@@ -34,6 +34,7 @@ class PredictionUnavailableResponse(CamelModel):
     filename: str | None = None
     elapsed_ms: float | None = None
     predictions: list[PredictionCandidate] = Field(default_factory=list)
+    gradcam_image: str | None = None
     logged: bool = True
 
 
