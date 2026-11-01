@@ -1,133 +1,255 @@
-# 🌿 Vistara AI
-### See the disease. Understand the prediction. Protect the harvest.
+<h1 align="center">🌿 VISTARA AI</h1>
+
+<h3 align="center">AI-Powered Plant Disease Intelligence</h3>
 
 <p align="center">
-  <strong>An AI-powered plant disease detection platform built with Deep Learning and Computer Vision.</strong>
-  <br />
-  Upload a leaf image, receive a model prediction, and explore the results through an interactive dashboard.
+  A deep learning platform for preliminary leaf disease screening, built with
+  <strong>MobileNetV2</strong>, <strong>FastAPI</strong>, and a real-time React dashboard.
+  Upload a leaf, inspect class scores, understand the prediction with Grad-CAM,
+  and review operational telemetry.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Active%20Development-14B8A6?style=for-the-badge" alt="Project status" />
-  <img src="https://img.shields.io/badge/Deep%20Learning-MobileNetV2-2563EB?style=for-the-badge" alt="MobileNetV2" />
-  <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge" alt="React" />
+  <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12+" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="TensorFlow" />
+  <img src="https://img.shields.io/badge/Model-MobileNetV2-14B8A6?style=for-the-badge" alt="MobileNetV2" />
+  <img src="https://img.shields.io/badge/Classes-38-38BDF8?style=for-the-badge" alt="38 classes" />
+  <img src="https://img.shields.io/badge/Status-Active-84CC16?style=for-the-badge" alt="Project status" />
+</p>
+
+<p align="center">
+  <a href="#demo"><strong>Demo</strong></a> ·
+  <a href="#features"><strong>Features</strong></a> ·
+  <a href="#evaluation"><strong>Evaluation</strong></a> ·
+  <a href="#architecture"><strong>Architecture</strong></a> ·
+  <a href="#quick-start"><strong>Quick Start</strong></a> ·
+  <a href="#api"><strong>API</strong></a> ·
+  <a href="#author"><strong>Author</strong></a>
+</p>
+
+<p align="center">
+  <sub>Educational and preliminary decision-support software — not an agricultural diagnostic authority.</sub>
 </p>
 
 ---
 
-## 🌱 About the Project
+<a id="demo"></a>
+## 📸 Application Demo
 
-Plant diseases can significantly affect agricultural productivity. Identifying them early is important, but manual identification can require time and specialized knowledge.
+Vistara AI combines a focused scanning workflow with the operational context needed to understand how a model is behaving. The screenshots below were captured from the production UI.
 
-**Vistara AI** explores how deep learning and computer vision can assist with plant disease identification.
+### Overview Dashboard
 
-The platform uses a trained **MobileNetV2 convolutional neural network** to analyze leaf images and predict one of 38 plant disease or healthy-leaf categories from the PlantVillage dataset.
+<!-- overview.png: Overview dashboard with the hero, live backend status, model runtime, and system health. -->
+![Overview Dashboard](docs/screenshots/overview.png)
 
-Rather than being just a model wrapped in a web page, Vistara AI brings together model inference, a FastAPI backend, SQLite-based prediction logging, and a modern interactive dashboard.
+The landing surface reports backend reachability, model availability, dataset coverage, and the current operational posture before a user starts a scan.
 
-> **Our vision:** Make AI-assisted plant disease analysis more accessible through a simple, intuitive, and transparent interface.
+### AI Disease Scanner
 
+<!-- scanner.png: Single-image scanner with a real uploaded leaf, live inference banner, and top-1 result. -->
+![AI Disease Scanner](docs/screenshots/scanner.png)
+
+Upload a leaf image and receive a ranked top-5 classification. Each score is the model's softmax output for a closed-set class — useful for comparison, not a calibrated probability.
+
+- Drag-and-drop or file-picker upload with client-side type and size checks.
+- Ranked predictions with crop, class label, and score.
+- Server-generated Grad-CAM overlay for the leading class.
+- Explicit live-backend versus demo-preview state.
+
+### Grad-CAM Explainability
+
+<!-- gradcam.png: Ranked top-5 class scores beside the generated Grad-CAM activation overlay. -->
+![Grad-CAM Visualization](docs/screenshots/gradcam.png)
+
+Grad-CAM highlights spatial regions that contributed to the selected class score. It is an interpretability aid, not biological proof or a segmentation mask.
+
+### Batch Analysis
+
+<!-- batch.png: Batch workspace with upload controls, review threshold, and per-file classification outcomes. -->
+![Batch Analysis](docs/screenshots/batch.png)
+
+Process up to 24 images in one request, with per-file statuses, accepted/rejected counts, ranked predictions, and a filtered CSV export. Demo rows remain explicitly marked in the exported file.
+
+### Monitoring Dashboard
+
+<!-- monitoring.png: Monitoring dashboard with request totals, confidence trend, class distribution, latency, drift status, and recent events. -->
+![Monitoring Dashboard](docs/screenshots/monitoring.png)
+
+Monitoring surfaces request volume, class distribution, mean confidence, latency percentiles, recent events, and batch activity. Drift status is shown honestly as unavailable until a verified baseline distribution is loaded.
+
+### Model Evaluation Report
+
+<!-- model-report.png: Model report with benchmark metrics, model information, per-class performance, and artifact status. -->
+![Model Evaluation Report](docs/screenshots/model-report.png)
+
+The evaluation view reads the project's held-out benchmark artifact and presents the headline metrics, per-class performance, and model metadata alongside their provenance.
+
+---
+
+## 🎥 Project Walkthrough
+
+<!-- Upload your demo video or add its hosted URL here. -->
+
+Coming soon — a short walkthrough will cover a live scan, Grad-CAM, batch processing, monitoring, and the model report.
+
+---
+
+## 🧠 About Vistara AI
+
+Plant disease identification is time-sensitive, knowledge-intensive, and often constrained by access to specialists. Vistara AI explores how deep learning can support an earlier, more informed first look at a leaf — while keeping the limits of the model visible.
+
+The platform classifies a leaf image into one of **38 PlantVillage categories across 14 crop species**, then presents the result through a dashboard built for inspection rather than spectacle. A scan is not just a label: it includes ranked scores, an explainability overlay, latency, request telemetry, and a clear distinction between a real backend response and an illustrative demo state.
+
+### What makes it more than a model demo
+
+- **Real inference path** — uploaded images are validated, resized to 224 × 224, preprocessed for MobileNetV2, and scored by the loaded Keras model.
+- **Explainability built into the workflow** — Grad-CAM is generated server-side from MobileNetV2 feature maps and returned with the prediction.
+- **Operational feedback** — SQLite telemetry powers monitoring views for request volume, confidence, latency, class mix, and batch outcomes.
+- **Honest states** — the UI distinguishes live predictions from demo previews, and reports drift as unavailable until a baseline exists.
+- **Evaluation provenance** — the model report reads a stored evaluation artifact instead of hard-coding marketing numbers.
+
+> **Scope:** This is an educational and preliminary decision-support tool. It does not replace scouting, laboratory testing, or professional agronomic advice.
+
+---
+
+<a id="features"></a>
 ## ✨ Features
 
-### 🔬 AI-Powered Leaf Analysis
-- Deep learning inference using a trained MobileNetV2 model.
-- Supports 38 PlantVillage classification categories.
-- Displays the predicted class and model-generated score.
-- Shows alternative top predictions where available.
-
-### 📸 Image Scanner
-- Upload leaf images for individual analysis.
-- Preview images before submitting them.
-- Receive predictions from the actual trained model.
-- View inference time and prediction details.
-
-### 📊 Batch Analysis
-- Upload and analyze multiple images in one operation.
-- Process images through the real backend inference pipeline.
-- View individual results and processing statuses.
-- Distinguish real model predictions from illustrative demo records.
-
-### 🗄️ Prediction Logging
-- FastAPI backend integrated with SQLite.
-- Stores prediction records and batch-processing information.
-- Tracks prediction status and inference metadata.
-
-### 🎨 Interactive Dashboard
-- Modern dashboard interface.
-- Responsive React-based frontend.
-- Data visualizations and analytical summaries.
-- Dedicated scanner and batch-analysis views.
+| Capability | What ships today |
+| --- | --- |
+| 🔬 **38-class leaf classification** | MobileNetV2 transfer-learning model covering 38 disease and healthy-leaf classes across 14 crop species. |
+| 📤 **AI disease scanner** | Single-image upload with type/size validation, ranked top-5 predictions, and class scores. |
+| 🖼️ **Grad-CAM explainability** | Server-generated heatmap overlay for the leading prediction; a heatmap failure never blocks a prediction. |
+| 📦 **Batch analysis** | Up to 24 images per request with per-file status, accepted/rejected counts, and aggregate results. |
+| 📄 **Filter-aware CSV export** | Export batch results after filtering; demo-generated rows stay explicitly marked. |
+| 📚 **Disease library** | Searchable reference for the model's 38 classes, including crop grouping and curated sample assets. |
+| 📈 **Monitoring dashboard** | Request trends, class distribution, mean score, p50/p95 latency, recent events, and batch activity. |
+| 🩺 **Drift status** | Exposes `empty`, `partial`, and `available` states without inventing a drift score when no baseline is configured. |
+| 🗂️ **Model evaluation report** | Reads stored metrics and per-class performance from the model artifact bundle. |
+| 🧪 **Demo/live distinction** | Real uploads always use the live backend; bundled illustrative samples are visual demos and are badged as such. |
+| 🧱 **Typed API boundary** | Pydantic v2 response contracts, camelCase JSON, explicit error codes, and typed frontend service methods. |
+| 📱 **Responsive dark UI** | Tokenized Tailwind design system, mobile navigation, keyboard-accessible controls, and reduced-motion support. |
 
 ---
 
-## 🧠 Machine Learning Model
+<a id="evaluation"></a>
+## 📊 Model Evaluation
 
-| Component | Details |
-|---|---|
-| Model architecture | MobileNetV2 |
-| Learning approach | Transfer Learning |
-| Framework | TensorFlow / Keras |
-| Dataset | PlantVillage |
-| Number of classes | 38 |
-| Model format | `.keras` |
-| Model parameters | 2,306,662 |
-| Model file size | Approximately 21.26 MB |
+> **Reported held-out results** from `backend/data/model/evaluation_report.json`, generated on the PlantVillage dataset (v1.0.2). These are controlled benchmark figures — not field-condition accuracy.
 
-### Dataset
+| Metric | Result |
+| --- | ---: |
+| **Test accuracy** | **98.04%** |
+| Macro precision | 97.51% |
+| Macro recall | 97.45% |
+| Macro F1 | 97.47% |
+| Weighted F1 | 98.03% |
+| Test loss | 0.0634 |
+| Test samples | 8,146 |
+| Classes | 38 |
+| Input resolution | 224 × 224 |
 
-Vistara AI uses the **PlantVillage dataset**, containing approximately 54,303 images across 38 plant disease and healthy-leaf categories.
+### Lowest per-class F1 in the evaluation artifact
 
-The dataset is used for training, validation, and testing through a stratified split:
+| Class | F1 | Support |
+| --- | ---: | ---: |
+| Corn — Cercospora / gray leaf spot | 0.8514 | 77 |
+| Tomato — Early blight | 0.8620 | 150 |
+| Corn — Northern leaf blight | 0.9097 | 147 |
+| Tomato — Target spot | 0.9128 | 211 |
+| Tomato — Leaf mold | 0.9366 | 143 |
 
-- Training: 70%
-- Validation: 15%
-- Testing: 15%
-
-### Model Performance
-
-The following metrics were measured on the held-out PlantVillage test set:
-
-| Evaluation Metric | Result |
-|---|---:|
-| Accuracy | **98.04%** |
-| Macro F1-score | **0.9747** |
-| Weighted F1-score | **0.9803** |
-
-These results represent performance on the held-out dataset, not guaranteed accuracy on photographs taken in real agricultural environments.
+These are the classes where the closed-set benchmark is weakest. They are useful for prioritizing inspection and future data work, not for estimating real-world failure rates.
 
 ---
 
+## 🔍 Explainability with Grad-CAM
+
+Vistara AI implements Grad-CAM against the MobileNetV2 `out_relu` feature maps:
+
+1. The model runs a forward pass for the selected class.
+2. Gradients of the class logit are taken with respect to the final convolutional feature maps.
+3. Feature maps are weighted by globally pooled gradients, passed through ReLU, normalized, and resized to the input image.
+4. A jet-colormap heatmap is blended with the original leaf and returned as a base64 PNG (`gradcamImage`).
+
+<!-- gradcam.png: Grad-CAM overlay highlighting the regions that influenced the predicted class. -->
+![Grad-CAM Visualization](docs/screenshots/gradcam.png)
+
+**Interpret it carefully:** a warm region indicates where the model's activation contributed to the selected class. It does not prove the presence of a pathogen, identify a disease mechanism, or establish that the model used botanically meaningful evidence.
+
+---
+
+<a id="architecture"></a>
 ## 🏗️ System Architecture
 
-Vistara AI follows a frontend–backend architecture in which the React application communicates with a FastAPI service.
-
 ```mermaid
-flowchart TD
-    A["User uploads leaf image"] --> B["React + TypeScript Frontend"]
-    B --> C["FastAPI REST API"]
-    C --> D["Image Validation & Preprocessing"]
-    D --> E["MobileNetV2 Model"]
-    E --> F["Disease Classification"]
-    F --> G["Prediction Response"]
-    G --> H["Dashboard / Scanner / Batch Results"]
-    F --> I["SQLite Prediction Logging"]
+flowchart LR
+    subgraph FE["Frontend — React + TypeScript"]
+        UI["Dashboard UI<br/>Scanner · Batch · Monitoring · Library"]
+        CLIENT["Typed API service layer"]
+    end
+
+    subgraph BE["Backend — FastAPI"]
+        ROUTES["REST API v1<br/>health · predict · model · monitoring"]
+        VALID["Image validation<br/>type · size · decode"]
+        PRE["Preprocessing<br/>224 × 224 · MobileNetV2 preprocess_input"]
+        MODEL["MobileNetV2<br/>38-class classifier"]
+        GRAD["Grad-CAM<br/>out_relu gradients"]
+        TELEM["Telemetry service"]
+    end
+
+    DB[("SQLite<br/>predictions · batches · baseline")]
+    OUT["Top-5 scores<br/>latency · Grad-CAM overlay"]
+
+    UI --> CLIENT
+    CLIENT -->|"multipart image / JSON"| ROUTES
+    ROUTES --> VALID
+    VALID --> PRE
+    PRE --> MODEL
+    MODEL --> OUT
+    MODEL --> GRAD
+    GRAD --> OUT
+    OUT -->|"JSON response"| CLIENT
+    ROUTES --> TELEM
+    TELEM --> DB
+    DB -->|"aggregated metrics"| ROUTES
+    ROUTES -->|"health · model info · metrics"| CLIENT
 ```
 
-### Technology Stack
+### Request lifecycle
+
+| Stage | Implementation |
+| --- | --- |
+| 1. Validate | Server-side extension, declared MIME type, size limit, and decode checks; batch requests validate per file. |
+| 2. Preprocess | Convert to RGB, resize to 224 × 224, convert to a float batch, and apply MobileNetV2 preprocessing. |
+| 3. Infer | Run the loaded `.keras` model and rank the top-5 class scores. |
+| 4. Explain | Generate a Grad-CAM overlay for the leading class on the single-image path. |
+| 5. Record | Log prediction telemetry to SQLite, including demo flags, latency, and batch outcomes. |
+| 6. Report | Aggregate recent predictions into monitoring metrics; serve model metadata and the evaluation artifact separately. |
+
+The backend reports demo state as `isDemo: false` for real inference. The frontend drives its live/demo banner from backend health and model readiness, not from a hard-coded flag.
+
+---
+
+## 🛠️ Technology Stack
 
 | Layer | Technologies |
-|---|---|
-| Frontend | React 19, TypeScript, Vite 8 |
-| Styling | Tailwind CSS |
-| Icons | Lucide |
-| Charts | Recharts |
-| Backend | Python, FastAPI |
-| Validation | Pydantic v2 |
-| Machine Learning | TensorFlow, Keras, MobileNetV2 |
-| Image Processing | Pillow |
-| Database | SQLite (`sqlite3`) |
-| API Communication | REST, HTTP, JSON, Multipart Form Data |
+| --- | --- |
+| **Frontend** | React 19, TypeScript, Vite 8 |
+| **Styling** | Tailwind CSS 3.4, custom semantic design tokens, Inter + JetBrains Mono |
+| **UI & icons** | Lucide React, custom accessible primitives |
+| **Data visualization** | Project-native SVG/CSS chart components (`TrendChart`, `DistributionBars`) — no third-party charting dependency |
+| **Backend** | Python 3.12, FastAPI, Uvicorn |
+| **Contracts** | Pydantic v2, pydantic-settings, camelCase JSON models |
+| **Machine learning** | TensorFlow / Keras, MobileNetV2 transfer learning |
+| **Image processing** | Pillow, NumPy |
+| **Explainability** | Grad-CAM over MobileNetV2 `out_relu` |
+| **Persistence** | SQLite through Python's standard-library `sqlite3` |
+| **Quality** | Pytest, Oxlint, TypeScript project build |
 
 ---
 
@@ -135,250 +257,249 @@ flowchart TD
 
 ```text
 Vistara_Ai/
-│
 ├── backend/
 │   ├── app/
-│   │   ├── api/
-│   │   │   └── v1/
-│   │   │       └── routes/
-│   │   │           └── predict.py
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   └── main.py
-│   │
-│   ├── data/
-│   │   └── model/
-│   │       ├── best_vistara_model.keras
-│   │       ├── classes.json
-│   │       └── evaluation_report.json
-│   │
-│   └── tests/
-│
+│   │   ├── api/v1/routes/        # health, predict, model, monitoring
+│   │   ├── repositories/         # SQLite persistence
+│   │   ├── schemas/              # Pydantic response/request contracts
+│   │   ├── services/             # prediction, Grad-CAM, model, monitoring
+│   │   ├── config.py             # environment and CORS settings
+│   │   ├── database.py           # SQLite setup and lifecycle
+│   │   ├── exceptions.py         # domain errors
+│   │   └── main.py               # FastAPI application factory
+│   ├── data/                     # gitignored local runtime data
+│   │   ├── model/                # .keras bundle, classes, evaluation report
+│   │   └── test_images/          # local validation images
+│   ├── tests/                    # API, batch, database, monitoring tests
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   └── .env.example
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── types/
 │   ├── public/
-│   └── package.json
-│
+│   │   ├── samples/              # illustrative scanner images
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   ├── src/
+│   │   ├── assets/               # local visual assets
+│   │   ├── components/           # batch, charts, layout, library, scanner, ui
+│   │   ├── context/              # app-wide state
+│   │   ├── data/                 # class library and display metadata
+│   │   ├── lib/                  # formatting and shared helpers
+│   │   ├── pages/                # Overview, Scanner, Batch, Library, Monitoring...
+│   │   ├── services/             # typed API client and health polling
+│   │   ├── types/                # shared TypeScript contracts
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   └── main.tsx
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── vite.config.ts
+├── docs/
+│   └── screenshots/              # README screenshots
 ├── AGENTS.md
+├── LICENSE
 ├── PROJECT_CONTEXT.md
 └── README.md
 ```
 
-*The model artifacts are kept locally and are not committed to the Git repository.*
+> `backend/data/` and `*.keras` files are intentionally gitignored. Model artifacts are produced through the Colab training workflow and placed locally; they are not committed to this repository.
 
 ---
 
+<a id="quick-start"></a>
 ## 🚀 Getting Started
-
-Follow these steps to run Vistara AI locally.
 
 ### Prerequisites
 
-Make sure you have installed:
+| Requirement | Version |
+| --- | --- |
+| Python | 3.12+ |
+| Node.js | 20.19+ or 22.12+ |
+| npm | 10+ |
+| Git | Current release |
 
-- Python 3.12
-- Node.js and npm
-- Git
+TensorFlow and the model bundle add several hundred megabytes to the local footprint. Real inference requires both.
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/akhil3145/vistara-ai.git
-cd vistara-ai
-```
-
-### 2. Backend Setup
-
-Open a terminal:
-
-```bash
-cd backend
-
-python -m venv .venv
-```
-
-Activate the virtual environment on Windows:
+### 1. Clone and enter the repository
 
 ```powershell
-.venv\Scripts\activate
+git clone https://github.com/akhil3145/vistara-ai.git
+Set-Location vistara-ai
 ```
 
-Install the backend dependencies:
+### 2. Create the backend environment
 
-```bash
-pip install -r requirements.txt
+```powershell
+Set-Location backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements-dev.txt
+pip install tensorflow
 ```
 
-**Model setup**
+`requirements.txt` covers the web stack. TensorFlow is installed separately because the runtime model bundle is optional for tests that mock inference.
 
-The trained model files are not included in the repository. Place the required artifacts in:
+### 3. Place the model artifacts
+
+Create the local model directory and add the verified bundle:
 
 ```text
 backend/data/model/
+├── best_vistara_model.keras   # required for live inference
+├── classes.json               # required; class-id to label mapping
+└── evaluation_report.json     # required for the evaluation report view
 ```
 
-Required files:
+The artifact directory can be overridden with `VISTARA_MODEL_ARTIFACTS_DIR`. Keep the class order and preprocessing contract aligned with the trained model — a mismatched `classes.json` silently produces wrong labels.
 
-```text
-best_vistara_model.keras
-classes.json
-evaluation_report.json
+### 4. Configure and start the backend
+
+```powershell
+Copy-Item .env.example .env
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The model and class mapping must correspond to the same training run.
+Verify that the API, database, and model are ready before opening the UI:
 
-Start the backend:
-
-```bash
-python -m uvicorn app.main:app --reload
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/health | ConvertTo-Json -Depth 5
 ```
 
-Backend API:
+- API root: `http://127.0.0.1:8000`
+- Interactive docs: `http://127.0.0.1:8000/docs`
+- Health: `http://127.0.0.1:8000/api/v1/health`
 
-```text
-http://127.0.0.1:8000
-```
+The first startup loads TensorFlow and the Keras model, so it can take noticeably longer than later requests.
 
-Interactive API documentation:
+### 5. Configure and start the frontend
 
-```text
-http://127.0.0.1:8000/docs
-```
+Open a second PowerShell terminal:
 
-### 3. Frontend Setup
-
-Open another terminal:
-
-```bash
-cd frontend
-
+```powershell
+Set-Location frontend
+Copy-Item .env.example .env
 npm install
-```
-
-Create a `.env` file in the frontend directory:
-
-```env
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
-
-Start the frontend:
-
-```bash
 npm run dev
 ```
 
-Open the local application:
+Open `http://localhost:5173`.
 
-```text
-http://localhost:5173
+The frontend reads `VITE_API_BASE_URL` from `.env`. In development, the backend accepts local origins on any port for `localhost`, `127.0.0.1`, and `[::1]`; production requires explicitly configured origins.
+
+### 6. Verify the build
+
+```powershell
+npm run lint
+npm run build
 ```
 
+The build runs TypeScript project checks before Vite bundles the application.
+
 ---
 
+<a id="api"></a>
 ## 🔌 API Endpoints
 
-The backend exposes versioned REST API endpoints.
+Base path: `/api/v1`
 
 | Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/api/v1/predict` | Single-image prediction |
-| POST | `/api/v1/predict/batch` | Batch image prediction |
+| --- | --- | --- |
+| `GET` | `/health` | Backend heartbeat, database status, and model readiness. |
+| `GET` | `/model/info` | Model metadata, class count, input size, and artifact availability. |
+| `GET` | `/model/report` | Stored evaluation metrics and per-class performance. |
+| `GET` | `/monitoring/metrics` | Aggregated request telemetry, latency, class distribution, and drift status. |
+| `POST` | `/predict` | Single-image multipart prediction with top-5 scores and an optional Grad-CAM image. |
+| `POST` | `/predict/batch` | Multi-image multipart prediction with per-file results and a batch summary. |
 
-### Batch Prediction
+### Single-image prediction
 
-The batch endpoint accepts multiple image files using multipart form data.
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/predict" `
+  -F "file=@C:\path\to\leaf.jpg"
+```
 
-**Request field:** `files`
+Key response fields: `status`, `isDemo`, `requestId`, `filename`, `elapsedMs`, `predictions[]`, `gradcamImage`, and `logged`.
 
-**Supported formats:** JPEG, PNG, WEBP
+### Batch prediction
 
-**Limits:** Up to 24 images per batch, with a maximum size of 10 MB per image.
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/predict/batch" `
+  -F "files=@C:\path\to\leaf-1.jpg" `
+  -F "files=@C:\path\to\leaf-2.png"
+```
 
-The batch endpoint supports individual item statuses and overall batch statuses, including:
+Key response fields: `status`, `batchId`, `itemCount`, `acceptedCount`, `rejectedCount`, `items[]`, and aggregate `predictions[]`.
 
-- `success`
-- `partial_success`
-- `rejected`
-- `model_unavailable`
-- `error`
+### Response and error behavior
 
----
-
-## 🧪 Testing & Validation
-
-The project has undergone backend and frontend testing.
-
-| Check | Result |
-|---|---|
-| Backend automated tests | 22 passed |
-| Python compilation check | Passed |
-| Frontend lint | 0 warnings, 0 errors |
-| Frontend production build | Passed |
-| Single-image inference integration | Tested |
-| Real batch inference integration | Tested |
-| Batch API response | HTTP 200 in successful test |
-
-A live batch test was performed using two leaf images, with both predictions returned by the actual trained model.
+- Predictions use camelCase JSON through Pydantic models.
+- A real backend response always sets `isDemo` to `false`.
+- Invalid images return explicit validation errors; one rejected batch file does not hide successful files.
+- If the model cannot load, prediction endpoints return `model_unavailable` rather than fabricated scores.
+- Upload limits default to 10 MB per file and 24 files per batch; both are configurable through backend environment variables.
 
 ---
 
-## ⚠️ Current Limitations
+## ⚠️ Limitations
 
-Vistara AI is an academic and experimental project under active development.
-
-- Model performance is evaluated on PlantVillage images, which are largely captured under controlled conditions.
-- Real-world performance may differ due to lighting, image quality, backgrounds, camera differences, and other environmental factors.
-- Model output scores are not calibrated probabilities and should not be interpreted as certainty.
-- A prediction is not a substitute for expert agricultural diagnosis.
-- Grad-CAM explainability is planned but is not yet implemented.
-- Prediction history, analytics, and other dashboard capabilities may continue to evolve.
-
-We believe in documenting limitations rather than presenting experimental results as guarantees.
-
----
-
-## 🛣️ Roadmap
-
-- [x] Project architecture and frontend foundation
-- [x] Interactive dashboard implementation
-- [x] FastAPI backend integration
-- [x] SQLite prediction logging
-- [x] MobileNetV2 model training
-- [x] Single-image real inference
-- [x] Real batch inference
-- [x] Frontend production build and lint validation
-- [ ] Verify CSV export with real inference results
-- [ ] Complete prediction history and analytics
-- [ ] Implement Grad-CAM explainability
-- [ ] Improve documentation and deployment
-- [ ] Final testing and demonstration
+- **Benchmark, not field performance.** The reported metrics come from PlantVillage-style images with controlled backgrounds and lighting. Real field images introduce occlusion, motion blur, multiple leaves, soil, and unseen conditions.
+- **Closed-set classification.** The model always chooses among 38 known classes. An out-of-distribution leaf, a non-leaf image, or a disease outside the training set can still receive a confident-looking score.
+- **Scores are not calibrated probabilities.** Softmax outputs rank alternatives under the model's learned distribution; they should not be read as clinical or agronomic confidence.
+- **Grad-CAM is not evidence.** Heatmaps show activation influence, not pathogen presence, lesion segmentation, or causal reasoning.
+- **Drift is not scored without a baseline.** The monitoring API exposes drift state and returns `unavailable` until a verified baseline distribution is configured; PSI/KS scoring is not enabled in this build.
+- **Limited crop coverage.** The 38 classes cover 14 crop species from the PlantVillage collection, not the full range of agricultural disease.
+- **Not a diagnostic authority.** Every prediction requires expert verification before any treatment, quarantine, or economic decision.
+- **Single-user development scope.** There is no authentication layer, multi-tenant isolation, or production deployment configuration in this repository.
+- **Local resource requirements.** TensorFlow and the model bundle are heavy for a laptop; training is intentionally separated into a Colab workflow.
 
 ---
 
-## 👨‍💻 Author
+## 🚧 Future Improvements
 
-**Akhil Pandey**
-
-B.Tech — Computer Science and Engineering  
-Specialization: Data Science & Artificial Intelligence
-
-- GitHub: [@akhil3145](https://github.com/akhil3145)
-- Project Repository: [Vistara AI](https://github.com/akhil3145/vistara-ai)
-
----
-
-## 📜 License
-
-This project is currently developed for academic and educational purposes. A formal open-source license will be added after its licensing terms are finalized.
+- Validate on field-collected images and add a domain-shift evaluation suite.
+- Add probability calibration and expected-calibration-error reporting.
+- Load a verified reference distribution and enable PSI/KS drift scoring with alert thresholds.
+- Surface confusion matrices, training curves, and per-class error analysis in the model report.
+- Add model versioning and side-by-side comparison of evaluation runs.
+- Provide human-in-the-loop review and an expert feedback loop for flagged predictions.
+- Add export formats for downstream review, such as structured JSON alongside CSV.
+- Evaluate quantization or ONNX/TFLite export only after a deployment target and accuracy budget are defined.
+- Add continuous integration for backend tests, frontend lint, TypeScript build, and screenshot checks.
+- Package the stack with Docker Compose for reproducible local setup.
 
 ---
+
+<a id="author"></a>
+## 👤 Author
 
 <p align="center">
-  <strong>🌿 Vistara AI — Exploring the intersection of Agriculture, AI, and Computer Vision.</strong>
-  <br />
-  <sub>Built with curiosity, code, and a little bit of deep learning.</sub>
+  <img src="https://github.com/akhil3145.png" alt="Akhil Pandey" width="96" style="border-radius: 50%;" />
+</p>
+
+<h3 align="center">Akhil Pandey</h3>
+
+<p align="center">
+  Developer of Vistara AI — focused on applied machine learning, explainable computer vision,
+  and interfaces that make model behavior legible.
+</p>
+
+<p align="center">
+  <a href="https://github.com/akhil3145">
+    <img src="https://img.shields.io/badge/GitHub-akhil3145-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
+  <a href="https://github.com/akhil3145/vistara-ai">
+    <img src="https://img.shields.io/badge/Repository-vistara--ai-20C9B0?style=for-the-badge&logo=github&logoColor=white" alt="Vistara AI repository" />
+  </a>
+</p>
+
+---
+
+## 📄 License
+
+Released under the [MIT License](LICENSE). Copyright © 2026 Akhil Pandey.
+
+<p align="center">
+  <sub>If Vistara AI is useful to your work, consider starring the repository.</sub>
 </p>
