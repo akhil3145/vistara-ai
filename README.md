@@ -27,7 +27,7 @@
   <a href="#architecture"><strong>Architecture</strong></a> ·
   <a href="#quick-start"><strong>Quick Start</strong></a> ·
   <a href="#api"><strong>API</strong></a> ·
-  <a href="#author"><strong>Author</strong></a>
+  <a href="#project-team"><strong>Project Team</strong></a>
 </p>
 
 <p align="center">
@@ -471,28 +471,32 @@ Key response fields: `status`, `batchId`, `itemCount`, `acceptedCount`, `rejecte
 
 ---
 
-<a id="author"></a>
-## 👤 Author
+<a id="project-team"></a>
+## 👥 Project Team
 
-<p align="center">
-  <img src="https://github.com/akhil3145.png" alt="Akhil Pandey" width="96" style="border-radius: 50%;" />
-</p>
+<p align="center">The team behind Vistara AI.</p>
 
-<h3 align="center">Akhil Pandey</h3>
+<!-- Replace the placeholder GitHub URLs for Divyansh Tiwari and Aryan Verma with their actual profiles. -->
 
-<p align="center">
-  Developer of Vistara AI — focused on applied machine learning, explainable computer vision,
-  and interfaces that make model behavior legible.
-</p>
-
-<p align="center">
-  <a href="https://github.com/akhil3145">
-    <img src="https://img.shields.io/badge/GitHub-akhil3145-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
-  </a>
-  <a href="https://github.com/akhil3145/vistara-ai">
-    <img src="https://img.shields.io/badge/Repository-vistara--ai-20C9B0?style=for-the-badge&logo=github&logoColor=white" alt="Vistara AI repository" />
-  </a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+      <strong>Akhil Pandey</strong><br />
+      <sub>Project Developer</sub><br /><br />
+      <a href="https://github.com/akhil3145">GitHub</a>
+    </td>
+    <td align="center" width="33%">
+      <strong>Divyansh Tiwari</strong><br />
+      <sub>Team Member</sub><br /><br />
+      <a href="https://github.com/REPLACE-DIVYANSH">GitHub profile (placeholder)</a>
+    </td>
+    <td align="center" width="33%">
+      <strong>Aryan Verma</strong><br />
+      <sub>Team Member</sub><br /><br />
+      <a href="https://github.com/REPLACE-ARYAN">GitHub profile (placeholder)</a>
+    </td>
+  </tr>
+</table>
 
 ---
 
