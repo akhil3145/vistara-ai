@@ -13,22 +13,19 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({
   return (
     <div
       role="note"
-      className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 text-xs text-amber-800 dark:text-amber-300"
+      className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/[0.055] p-4 text-xs text-warning"
     >
-      <FlaskConical
-        className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
-        aria-hidden="true"
-      />
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-warning/25 bg-warning/10">
+        <FlaskConical className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+      </div>
       <div className="space-y-1">
-        <div className="flex flex-wrap items-center gap-2 font-semibold">
+        <div className="flex flex-wrap items-center gap-2 font-semibold text-ink">
           <span>{title}</span>
-          <span className="rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide">
+          <span className="rounded-full border border-warning/30 bg-warning/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.09em] text-warning">
             DEMO DATA
           </span>
         </div>
-        <div className="leading-relaxed text-amber-700/90 dark:text-amber-400/90">
-          {children}
-        </div>
+        <div className="leading-relaxed text-muted">{children}</div>
       </div>
     </div>
   );

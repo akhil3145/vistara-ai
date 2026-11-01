@@ -87,10 +87,11 @@ export function App() {
 
   return (
     <ThemeProvider>
-      <div className="flex min-h-screen bg-slate-50 dark:bg-navy-950 transition-colors duration-150">
+      <div className="app-bg flex min-h-screen text-ink transition-colors duration-150">
         <Sidebar
           currentPage={currentPage}
           onSelectPage={setCurrentPage}
+          isDemoMode={!isBackendReady}
         />
 
         <MobileDrawer
@@ -100,16 +101,14 @@ export function App() {
           onSelectPage={setCurrentPage}
         />
 
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col">
           <Header
             currentPage={currentPage}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
             isDemoMode={!isBackendReady}
           />
 
-          <main className="flex-1 overflow-y-auto">
-            {renderCurrentPage()}
-          </main>
+          <main className="flex-1 overflow-y-auto">{renderCurrentPage()}</main>
         </div>
       </div>
     </ThemeProvider>

@@ -11,9 +11,9 @@ export const DemoBadge: React.FC<DemoBadgeProps> = ({
 }) => {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.09em] text-warning ${className}`}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+      <span className="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
       {label}
     </span>
   );

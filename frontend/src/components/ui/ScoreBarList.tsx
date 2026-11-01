@@ -10,32 +10,48 @@ export const ScoreBarList: React.FC<ScoreBarListProps> = ({ scores }) => {
     <ul className="space-y-3">
       {scores.map((item, index) => {
         const percent = item.score * 100;
+        const isTop = index === 0;
+
         return (
-          <li key={item.classId}>
+          <li key={item.classId} className="group">
             <div className="flex items-baseline justify-between gap-3 text-xs">
-              <span className="flex min-w-0 items-center gap-2 text-slate-700 dark:text-slate-200">
-                <span className="w-4 shrink-0 font-mono text-[10px] text-slate-400 dark:text-slate-500">
+              <span className="flex min-w-0 items-center gap-2.5 text-ink">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-mono text-[9px] font-semibold ${
+                    isTop
+                      ? 'bg-accent/15 text-accent'
+                      : 'bg-raised/80 text-faint'
+                  }`}
+                >
                   {index + 1}
                 </span>
-                <span className="truncate">{item.label}</span>
+                <span className={`truncate ${isTop ? 'font-semibold' : 'text-muted'}`}>
+                  {item.label}
+                </span>
               </span>
-              <span className="shrink-0 font-mono text-slate-600 dark:text-slate-300">
+              <span
+                className={`shrink-0 font-mono text-[11px] ${
+                  isTop ? 'text-accent' : 'text-muted'
+                }`}
+              >
                 {percent.toFixed(1)}%
               </span>
             </div>
             <div
-              className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-navy-950"
+              className="mt-1.5 h-[7px] overflow-hidden rounded-full bg-base/70"
               role="progressbar"
-              aria-label={`${item.label} demo score`}
+              aria-label={`${item.label} score`}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Number(percent.toFixed(1))}
             >
               <div
-                className={`h-full rounded-full ${
-                  index === 0 ? 'bg-teal-500' : 'bg-sky-500/70'
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isTop
+                    ? 'bg-gradient-to-r from-accent to-cyan shadow-[0_0_12px_rgba(32,201,176,0.35)]'
+                    : 'bg-cyan/50 group-hover:bg-cyan/70'
                 }`}
-                style={{ width: `${Math.max(percent, 0.5)}%` }}
+                style={{ width: `${Math.max(percent, 0.6)}%` }}
               />
             </div>
           </li>

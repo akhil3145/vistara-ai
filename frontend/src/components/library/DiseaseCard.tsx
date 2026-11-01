@@ -4,72 +4,95 @@ import type { DiseaseClass, PathogenType } from '../../types/disease';
 
 interface DiseaseCardProps {
   disease: DiseaseClass;
+  imageSrc?: string;
 }
 
 const TYPE_TONES: Record<PathogenType, string> = {
-  Fungus: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  Bacterium: 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300',
-  Virus: 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300',
-  Oomycete: 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-  Mite: 'border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300',
-  Healthy: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+  Fungus: 'border-warning/30 bg-warning/10 text-warning',
+  Bacterium: 'border-danger/30 bg-danger/10 text-danger',
+  Virus: 'border-accent/30 bg-accent/10 text-accent',
+  Oomycete: 'border-cyan/30 bg-cyan/10 text-cyan',
+  Mite: 'border-warning/30 bg-warning/10 text-warning',
+  Healthy: 'border-lime/30 bg-lime/10 text-lime',
 };
 
-export const DiseaseCard: React.FC<DiseaseCardProps> = ({ disease }) => {
+export const DiseaseCard: React.FC<DiseaseCardProps> = ({
+  disease,
+  imageSrc,
+}) => {
   const Icon = disease.healthy ? Leaf : Bug;
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-teal-500/30 dark:border-navy-800 dark:bg-navy-900 dark:hover:border-teal-500/30">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-300">
-          {disease.crop}
-        </span>
-        <span
-          className={`rounded border px-1.5 py-0.5 font-mono text-[10px] ${TYPE_TONES[disease.pathogenType]}`}
-        >
-          {disease.pathogenType}
-        </span>
-      </div>
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-panel panel-hover">
+      {imageSrc ? (
+        <div className="relative h-28 overflow-hidden border-b border-line bg-base">
+          <img
+            src={imageSrc}
+            alt={`Illustrative ${disease.crop} ${disease.name} leaf asset`}
+            loading="lazy"
+            className="h-full w-full object-cover opacity-80 transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-transparent" />
+          <span className="absolute right-2 top-2 rounded-full border border-line bg-base/75 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.08em] text-faint backdrop-blur">
+            Demo asset
+          </span>
+        </div>
+      ) : null}
 
-      <div className="mt-3 flex items-start gap-2">
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-navy-850 dark:text-slate-400">
-          <Icon className="h-4 w-4" aria-hidden="true" />
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-md border border-line bg-raised/60 px-1.5 py-0.5 text-[9.5px] font-medium text-muted">
+            {disease.crop}
+          </span>
+          <span
+            className={`rounded-md border px-1.5 py-0.5 font-mono text-[9px] ${TYPE_TONES[disease.pathogenType]}`}
+          >
+            {disease.pathogenType}
+          </span>
         </div>
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold leading-tight text-slate-900 dark:text-white">
-            {disease.name}
-          </h3>
-          <p className="mt-0.5 break-words font-mono text-[10px] text-slate-400 dark:text-slate-500">
-            {disease.healthy ? 'No causal pathogen' : disease.pathogen}
-          </p>
-        </div>
-      </div>
 
-      <div className="mt-3 space-y-2 text-[11px] leading-relaxed">
-        <div>
-          <span className="font-semibold text-slate-600 dark:text-slate-300">
-            Reported symptoms:{' '}
-          </span>
-          <span className="text-slate-500 dark:text-slate-400">
-            {disease.symptoms}
-          </span>
+        <div className="mt-3 flex items-start gap-2.5">
+          <div
+            className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
+              disease.healthy
+                ? 'border-lime/25 bg-lime/10 text-lime'
+                : 'border-accent/25 bg-accent/10 text-accent'
+            }`}
+          >
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold leading-tight text-ink">
+              {disease.name}
+            </h3>
+            <p className="mt-0.5 break-words font-mono text-[9.5px] text-faint">
+              {disease.healthy ? 'No causal pathogen' : disease.pathogen}
+            </p>
+          </div>
         </div>
-        <div>
-          <span className="font-semibold text-slate-600 dark:text-slate-300">
-            Context:{' '}
-          </span>
-          <span className="text-slate-500 dark:text-slate-400">
-            {disease.note}
-          </span>
-        </div>
-      </div>
 
-      <div className="mt-auto pt-3">
-        <div
-          className="truncate rounded bg-slate-50 px-2 py-1 font-mono text-[9px] text-slate-400 dark:bg-navy-950/40 dark:text-slate-500"
-          title={disease.id}
-        >
-          {disease.id}
+        <div className="mt-3 space-y-2.5 text-[10.5px] leading-relaxed">
+          <div>
+            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-faint">
+              Reported symptoms
+            </span>
+            <p className="mt-1 text-muted">{disease.symptoms}</p>
+          </div>
+          <div>
+            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-faint">
+              Context
+            </span>
+            <p className="mt-1 text-muted">{disease.note}</p>
+          </div>
+        </div>
+
+        <div className="mt-auto pt-3">
+          <div
+            className="truncate rounded-md border border-line/70 bg-base/30 px-2 py-1 font-mono text-[8.5px] text-faint"
+            title={disease.id}
+          >
+            {disease.id}
+          </div>
         </div>
       </div>
     </article>

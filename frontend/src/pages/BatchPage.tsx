@@ -4,6 +4,7 @@ import {
   Download,
   FilterX,
   Info,
+  Layers,
   Loader2,
   Play,
   Sparkles,
@@ -463,6 +464,8 @@ export const BatchPage: React.FC = () => {
   }, [items, statusFilter, confidenceFilter, threshold]);
 
   const queuedCount = items.filter((item) => item.status === 'queued').length;
+  const completeCount = items.filter((item) => item.status === 'complete').length;
+  const errorCount = items.filter((item) => item.status === 'error').length;
 
   const clearFilters = () => {
     setStatusFilter('all');
@@ -572,19 +575,14 @@ export const BatchPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="Batch Analysis Queue"
-      subtitle="High-throughput multi-image foliar screening with backend inference, uncertainty filters, and CSV export."
-      badge={
-        <span className="rounded border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 font-mono text-[11px] text-sky-600 dark:text-sky-400">
-          Screen B
-        </span>
-      }
+      eyebrow="Batch inference · multi-image"
+      title="Batch Analysis"
+      subtitle="High-throughput foliar screening with backend inference, uncertainty filters, and CSV export."
+      badge={<span className="chip chip-cyan font-mono">Screen B</span>}
       actions={
         <>
           {batchStatusLabel === 'REAL INFERENCE' ? (
-            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-600 dark:text-teal-400">
-              {batchStatusLabel}
-            </span>
+            <span className="chip chip-accent font-mono">{batchStatusLabel}</span>
           ) : (
             <DemoBadge label={batchStatusLabel} />
           )}
@@ -592,7 +590,7 @@ export const BatchPage: React.FC = () => {
             type="button"
             onClick={handleExportCsv}
             disabled={filteredItems.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-sky-500/40 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-navy-800 dark:bg-navy-900 dark:text-slate-200 dark:hover:text-sky-300"
+            className="btn-secondary"
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Export CSV</span>
@@ -602,32 +600,59 @@ export const BatchPage: React.FC = () => {
     >
       {/* Contextual banner: distinguish queued uploads, real results, and simulated samples. */}
       {hasMixedResults ? (
-        <div role="status" className="flex items-start gap-3 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 text-xs text-sky-900 dark:text-sky-200">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-cyan/25 bg-cyan/[0.05] p-4 text-xs text-muted"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
           <div className="space-y-0.5">
-            <span className="font-semibold">Mixed batch results</span>
-            <p className="leading-relaxed">Uploaded photographs were processed by the FastAPI MobileNetV2 backend. Illustrative SVG samples were simulated locally; those sample scores are demo data.</p>
+            <span className="font-semibold text-ink">Mixed batch results</span>
+            <p className="leading-relaxed">
+              Uploaded photographs were processed by the FastAPI MobileNetV2
+              backend. Illustrative SVG samples were simulated locally; those
+              sample scores are demo data.
+            </p>
           </div>
         </div>
       ) : hasRealInferences ? (
-        <div role="status" className="flex items-start gap-3 rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 text-xs text-teal-900 dark:text-teal-200">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-accent/25 bg-accent/[0.05] p-4 text-xs text-muted"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
           <div className="space-y-0.5">
-            <span className="font-semibold">Backend Batch Inference Results</span>
-            <p className="leading-relaxed text-teal-800/90 dark:text-teal-300/90">Successful uploaded-image predictions were produced by the FastAPI backend (<code>POST /api/v1/predict/batch</code>) using MobileNetV2. Illustrative SVG samples, if present, are simulated separately.</p>
+            <span className="font-semibold text-ink">
+              Backend batch inference results
+            </span>
+            <p className="leading-relaxed">
+              Successful uploaded-image predictions were produced by the FastAPI
+              backend (<code className="text-accent">POST /api/v1/predict/batch</code>)
+              using MobileNetV2. Illustrative SVG samples, if present, are
+              simulated separately.
+            </p>
           </div>
         </div>
       ) : hasDemoPredictions || items.some((item) => item.meta.source === 'sample') ? (
         <DemoBanner title="Illustrative demo samples">
-          Gallery SVG assets are simulated locally. Their predictions and scores are
-          demonstration data, not output from the trained MobileNetV2 model.
+          Gallery SVG assets are simulated locally. Their predictions and scores
+          are demonstration data, not output from the trained MobileNetV2 model.
         </DemoBanner>
       ) : items.some((item) => item.meta.source === 'upload') ? (
-        <div role="status" className="flex items-start gap-3 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 text-xs text-sky-900 dark:text-sky-200">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-cyan/25 bg-cyan/[0.05] p-4 text-xs text-muted"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
           <div className="space-y-0.5">
-            <span className="font-semibold">Uploaded images queued for analysis</span>
-            <p className="leading-relaxed">Click &quot;Run batch analysis&quot; to send queued photographs to the FastAPI backend (<code>POST /api/v1/predict/batch</code>) for MobileNetV2 inference.</p>
+            <span className="font-semibold text-ink">
+              Uploaded images queued for analysis
+            </span>
+            <p className="leading-relaxed">
+              Click &quot;Run batch analysis&quot; to send queued photographs to
+              the FastAPI backend (
+              <code className="text-cyan">POST /api/v1/predict/batch</code>) for
+              MobileNetV2 inference.
+            </p>
           </div>
         </div>
       ) : null}
@@ -635,7 +660,7 @@ export const BatchPage: React.FC = () => {
       {inputErrors.length > 0 && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300"
+          className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/[0.07] p-3 text-xs text-danger"
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div className="space-y-1">
@@ -652,200 +677,256 @@ export const BatchPage: React.FC = () => {
       {notice && (
         <div
           role="status"
-          className="flex items-start gap-2 rounded-xl border border-sky-500/25 bg-sky-500/5 p-3 text-xs text-sky-800 dark:text-sky-300"
+          className="flex items-start gap-2 rounded-xl border border-cyan/25 bg-cyan/[0.05] p-3 text-xs text-muted"
         >
-          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan" aria-hidden="true" />
           <span>{notice}</span>
         </div>
       )}
 
+      {/* Campaign summary */}
       <section className="space-y-3" aria-labelledby="batch-summary-heading">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3
-            id="batch-summary-heading"
-            className="text-sm font-semibold text-slate-900 dark:text-white"
-          >
-            Batch Summary
-          </h3>
-          {hasMixedResults ? (
-            <DemoBadge label="MIXED RESULTS" />
-          ) : hasRealInferences ? (
-            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-600 dark:text-teal-400">REAL INFERENCE</span>
-          ) : hasDemoPredictions ? (
-            <DemoBadge label="DEMO DATA" />
-          ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="eyebrow">Campaign summary</p>
+            {hasMixedResults ? (
+              <DemoBadge label="MIXED RESULTS" />
+            ) : hasRealInferences ? (
+              <span className="chip chip-accent font-mono">REAL INFERENCE</span>
+            ) : hasDemoPredictions ? (
+              <DemoBadge label="DEMO DATA" />
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="chip">
+              <span className="h-1.5 w-1.5 rounded-full bg-faint" />
+              {items.length} total
+            </span>
+            <span className="chip">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              {completeCount} complete
+            </span>
+            <span className="chip">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan" />
+              {queuedCount} queued
+            </span>
+            {errorCount > 0 && (
+              <span className="chip chip-danger">
+                <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+                {errorCount} error
+              </span>
+            )}
+          </div>
         </div>
+
+        <h3 id="batch-summary-heading" className="sr-only">
+          Batch summary
+        </h3>
         <BatchKpis items={items} threshold={threshold} />
       </section>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-900">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-            Add Images to Queue
-          </h3>
-          <span className="font-mono text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
-            {items.length} / {MAX_BATCH_ITEMS} items
-          </span>
-        </div>
-        <FileDropzone
-          id="batch-upload"
-          title="Drag and drop multiple leaf photographs"
-          description="or browse files from your device"
-          hint="JPEG, PNG, or WEBP. Maximum 10 MB per file. Up to 24 images."
-          multiple
-          tone="sky"
-          onFiles={handleFiles}
-          disabled={isRunning}
-        />
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={runBatch}
-            disabled={isRunning || queuedCount === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isRunning ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Play className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            <span>
-              {isRunning
-                ? 'Running batch analysis...'
-                : `Run batch analysis${queuedCount > 0 ? ` (${queuedCount})` : ''}`}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={loadDemoSamples}
-            disabled={isRunning}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:border-sky-500/40 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-200 dark:hover:text-sky-300"
-          >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Load illustrative samples</span>
-          </button>
-        </div>
-
-        {isRunning && (
-          <div className="mt-4" role="status" aria-live="polite">
-            <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-              <span>Batch analysis progress</span>
-              <span className="font-mono">{progress}%</span>
-            </div>
-            <div
-              className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-navy-950"
-              role="progressbar"
-              aria-label="Batch analysis progress"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progress}
-            >
-              <div
-                className="h-full rounded-full bg-sky-500 transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        <p className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-          Uploaded leaf images are sent to the FastAPI backend (
-          <code>POST /api/v1/predict/batch</code>) for MobileNetV2 inference.
-          Illustrative demo samples are generated SVG graphics processed locally.
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-900">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-          Filters and Uncertainty Threshold
-        </h3>
-        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div>
-            <label
-              htmlFor="batch-status-filter"
-              className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
-            >
-              Status filter
-            </label>
-            <select
-              id="batch-status-filter"
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as BatchStatusFilter)
-              }
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
-            >
-              <option value="all">All statuses</option>
-              <option value="review">Needs review</option>
-              <option value="confident">Confident</option>
-              <option value="pending">Pending</option>
-              <option value="error">Errors</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="batch-confidence-filter"
-              className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
-            >
-              Score range
-            </label>
-            <select
-              id="batch-confidence-filter"
-              value={confidenceFilter}
-              onChange={(event) =>
-                setConfidenceFilter(event.target.value as BatchConfidenceFilter)
-              }
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
-            >
-              <option value="all">All score ranges</option>
-              <option value="gte90">&ge; 90% score</option>
-              <option value="70to90">70% to 90% score</option>
-              <option value="50to70">50% to 70% score</option>
-              <option value="lt50">&lt; 50% score</option>
-            </select>
-          </div>
-
-          <div>
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <label
-                htmlFor="batch-threshold"
-                className="font-medium text-slate-600 dark:text-slate-300"
-              >
-                Review threshold
-              </label>
-              <span className="font-mono text-slate-500 dark:text-slate-400">
-                {threshold}%
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Upload / run */}
+        <section className="panel p-4 sm:p-5 lg:col-span-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan/25 bg-cyan/10">
+                <Layers className="h-3.5 w-3.5 text-cyan" />
               </span>
+              <div>
+                <h3 className="text-sm font-semibold text-ink">
+                  Add images to queue
+                </h3>
+                <p className="text-[10px] text-faint">
+                  Select files, then run the campaign
+                </p>
+              </div>
             </div>
-            <input
-              id="batch-threshold"
-              type="range"
-              min={40}
-              max={95}
-              step={1}
-              value={threshold}
-              onChange={(event) => setThreshold(Number(event.target.value))}
-              className="w-full accent-sky-500"
-            />
-          </div>
-        </div>
-
-        {(statusFilter !== 'all' || confidenceFilter !== 'all') && (
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="text-slate-500 dark:text-slate-400">
-              Showing {filteredItems.length} of {items.length} items
+            <span className="font-mono text-[10px] uppercase tracking-wide text-faint">
+              {items.length} / {MAX_BATCH_ITEMS} items
             </span>
+          </div>
+
+          <FileDropzone
+            id="batch-upload"
+            title="Drag and drop multiple leaf photographs"
+            description="or browse files from your device"
+            hint="JPEG, PNG, or WEBP. Maximum 10 MB per file. Up to 24 images."
+            multiple
+            tone="sky"
+            onFiles={handleFiles}
+            disabled={isRunning}
+          />
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={clearFilters}
-              className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+              onClick={runBatch}
+              disabled={isRunning || queuedCount === 0}
+              className="btn-primary"
             >
-              <FilterX className="h-3 w-3" />
-              <span>Clear filters</span>
+              {isRunning ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Play className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              <span>
+                {isRunning
+                  ? 'Running batch analysis...'
+                  : `Run batch analysis${queuedCount > 0 ? ` (${queuedCount})` : ''}`}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={loadDemoSamples}
+              disabled={isRunning}
+              className="btn-secondary"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+              <span>Load illustrative samples</span>
             </button>
           </div>
-        )}
+
+          {isRunning && (
+            <div className="mt-4" role="status" aria-live="polite">
+              <div className="mb-1.5 flex items-center justify-between text-[10px] text-faint">
+                <span>Batch analysis progress</span>
+                <span className="font-mono text-accent">{progress}%</span>
+              </div>
+              <div
+                className="h-1.5 overflow-hidden rounded-full bg-base/70"
+                role="progressbar"
+                aria-label="Batch analysis progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+              >
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-accent to-cyan transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <p className="mt-3 text-[10px] leading-relaxed text-faint">
+            Uploaded leaf images are sent to the FastAPI backend (
+            <code className="text-muted">POST /api/v1/predict/batch</code>) for
+            MobileNetV2 inference. Illustrative demo samples are generated SVG
+            graphics processed locally.
+          </p>
+        </section>
+
+        {/* Filters */}
+        <section className="panel p-4 sm:p-5">
+          <div className="mb-4 flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
+              <FilterX className="h-3.5 w-3.5 text-accent" />
+            </span>
+            <div>
+              <h3 className="text-sm font-semibold text-ink">
+                Filters & threshold
+              </h3>
+              <p className="text-[10px] text-faint">
+                Refine records and review flags
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="batch-status-filter"
+                className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-faint"
+              >
+                Status filter
+              </label>
+              <select
+                id="batch-status-filter"
+                value={statusFilter}
+                onChange={(event) =>
+                  setStatusFilter(event.target.value as BatchStatusFilter)
+                }
+                className="field"
+              >
+                <option value="all">All statuses</option>
+                <option value="review">Needs review</option>
+                <option value="confident">Confident</option>
+                <option value="pending">Pending</option>
+                <option value="error">Errors</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="batch-confidence-filter"
+                className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-faint"
+              >
+                Score range
+              </label>
+              <select
+                id="batch-confidence-filter"
+                value={confidenceFilter}
+                onChange={(event) =>
+                  setConfidenceFilter(event.target.value as BatchConfidenceFilter)
+                }
+                className="field"
+              >
+                <option value="all">All score ranges</option>
+                <option value="gte90">&ge; 90% score</option>
+                <option value="70to90">70% to 90% score</option>
+                <option value="50to70">50% to 70% score</option>
+                <option value="lt50">&lt; 50% score</option>
+              </select>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between text-[10px]">
+                <label
+                  htmlFor="batch-threshold"
+                  className="font-semibold uppercase tracking-[0.1em] text-faint"
+                >
+                  Review threshold
+                </label>
+                <span className="font-mono text-accent">{threshold}%</span>
+              </div>
+              <input
+                id="batch-threshold"
+                type="range"
+                min={40}
+                max={95}
+                step={1}
+                value={threshold}
+                onChange={(event) => setThreshold(Number(event.target.value))}
+                className="w-full accent-[rgb(var(--c-accent))]"
+              />
+              <div className="mt-1 flex justify-between font-mono text-[9px] text-faint">
+                <span>40%</span>
+                <span>95%</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-line/70 pt-3 text-[10px]">
+              <span className="text-faint">
+                Showing{' '}
+                <span className="font-mono text-muted">{filteredItems.length}</span> of{' '}
+                <span className="font-mono text-muted">{items.length}</span>
+              </span>
+              {(statusFilter !== 'all' || confidenceFilter !== 'all') && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1 font-medium text-accent hover:text-cyan"
+                >
+                  <FilterX className="h-3 w-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
 
       <BatchTable

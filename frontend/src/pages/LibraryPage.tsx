@@ -8,10 +8,15 @@ import {
   DISEASE_CLASSES,
   PATHOGEN_TYPE_OPTIONS,
 } from '../data/diseaseClasses';
+import { SAMPLE_GALLERY } from '../data/sampleGallery';
 import type { PathogenType } from '../types/disease';
 
 type ConditionFilter = 'all' | 'diseased' | 'healthy';
 type PathogenFilter = 'all' | PathogenType;
+
+const SAMPLE_IMAGE_BY_CLASS = new Map(
+  SAMPLE_GALLERY.map((sample) => [sample.classId, sample.src]),
+);
 
 export const LibraryPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,27 +56,43 @@ export const LibraryPage: React.FC = () => {
     setPathogenFilter('all');
   };
 
+  const hasActiveFilters =
+    searchQuery !== '' ||
+    cropFilter !== 'all' ||
+    conditionFilter !== 'all' ||
+    pathogenFilter !== 'all';
+
+  const healthyCount = DISEASE_CLASSES.filter((item) => item.healthy).length;
+
   return (
     <PageContainer
+      eyebrow="Reference library · PlantVillage taxonomy"
       title="Disease Reference Library"
-      subtitle="Searchable educational reference for the supported crop classes and their reported foliar symptoms."
+      subtitle="Searchable educational reference for supported crop classes and their reported foliar symptoms."
       badge={
-        <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+        <span className="chip chip-lime font-mono">
           {DISEASE_CLASSES.length} classes
+        </span>
+      }
+      actions={
+        <span className="chip">
+          <span className="h-1.5 w-1.5 rounded-full bg-lime" />
+          {DISEASE_CLASSES.length - healthyCount} diseased · {healthyCount} healthy
         </span>
       }
     >
       <div
         role="note"
-        className="flex items-start gap-3 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 text-xs text-sky-800 dark:text-sky-300"
+        className="flex items-start gap-3 rounded-xl border border-cyan/25 bg-cyan/[0.045] p-4 text-xs text-muted"
       >
-        <Info
-          className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400"
-          aria-hidden="true"
-        />
+        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-cyan/25 bg-cyan/10">
+          <Info className="h-3.5 w-3.5 text-cyan" aria-hidden="true" />
+        </div>
         <div className="space-y-1">
-          <div className="font-semibold">Educational reference, not a diagnosis</div>
-          <p className="leading-relaxed text-sky-700/90 dark:text-sky-300/90">
+          <div className="font-semibold text-ink">
+            Educational reference, not a diagnosis
+          </div>
+          <p className="max-w-4xl leading-relaxed">
             Descriptions summarize widely reported symptom patterns for the
             PlantVillage class taxonomy. Visual symptoms can overlap across
             pathogens, nutrient disorders, and environmental stress. Confirm any
@@ -81,18 +102,18 @@ export const LibraryPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-900">
+      <section className="panel p-4 sm:p-5">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <label
               htmlFor="library-search"
-              className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-faint"
             >
               Search reference
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint"
                 aria-hidden="true"
               />
               <input
@@ -101,7 +122,7 @@ export const LibraryPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search crop, disease, pathogen, or symptom"
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
+                className="field pl-9"
               />
             </div>
           </div>
@@ -109,7 +130,7 @@ export const LibraryPage: React.FC = () => {
           <div className="lg:col-span-3">
             <label
               htmlFor="library-crop-filter"
-              className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-faint"
             >
               Crop
             </label>
@@ -117,7 +138,7 @@ export const LibraryPage: React.FC = () => {
               id="library-crop-filter"
               value={cropFilter}
               onChange={(event) => setCropFilter(event.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
+              className="field"
             >
               <option value="all">All crops</option>
               {CROP_OPTIONS.map((crop) => (
@@ -131,7 +152,7 @@ export const LibraryPage: React.FC = () => {
           <div className="lg:col-span-2">
             <label
               htmlFor="library-condition-filter"
-              className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-faint"
             >
               Condition
             </label>
@@ -141,7 +162,7 @@ export const LibraryPage: React.FC = () => {
               onChange={(event) =>
                 setConditionFilter(event.target.value as ConditionFilter)
               }
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
+              className="field"
             >
               <option value="all">All</option>
               <option value="diseased">Diseased</option>
@@ -152,7 +173,7 @@ export const LibraryPage: React.FC = () => {
           <div className="lg:col-span-2">
             <label
               htmlFor="library-pathogen-filter"
-              className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-faint"
             >
               Agent type
             </label>
@@ -162,7 +183,7 @@ export const LibraryPage: React.FC = () => {
               onChange={(event) =>
                 setPathogenFilter(event.target.value as PathogenFilter)
               }
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-100"
+              className="field"
             >
               <option value="all">All agents</option>
               {PATHOGEN_TYPE_OPTIONS.map((type) => (
@@ -174,28 +195,28 @@ export const LibraryPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line/70 pt-3 text-[10px] text-faint">
           <span>
-            Showing <span className="font-mono">{filteredDiseases.length}</span>{' '}
-            of <span className="font-mono">{DISEASE_CLASSES.length}</span> classes
+            Showing{' '}
+            <span className="font-mono text-accent">{filteredDiseases.length}</span>{' '}
+            of <span className="font-mono text-muted">{DISEASE_CLASSES.length}</span>{' '}
+            classes
           </span>
-          {(searchQuery ||
-            cropFilter !== 'all' ||
-            conditionFilter !== 'all' ||
-            pathogenFilter !== 'all') && (
+          {hasActiveFilters && (
             <button
               type="button"
               onClick={clearFilters}
-              className="rounded border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-navy-800 dark:text-slate-300 dark:hover:text-teal-300"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 font-medium text-muted transition-colors hover:border-accent/40 hover:text-accent"
             >
+              <FilterX className="h-3 w-3" />
               Reset filters
             </button>
           )}
         </div>
-      </div>
+      </section>
 
       {filteredDiseases.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-navy-800 dark:bg-navy-900">
+        <div className="panel p-4">
           <EmptyState
             icon={FilterX}
             title="No reference entries match"
@@ -204,7 +225,7 @@ export const LibraryPage: React.FC = () => {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-teal-500/40 hover:text-teal-700 dark:border-navy-800 dark:text-slate-200 dark:hover:text-teal-300"
+                className="btn-secondary"
               >
                 Reset filters
               </button>
@@ -214,18 +235,25 @@ export const LibraryPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredDiseases.map((disease) => (
-            <DiseaseCard key={disease.id} disease={disease} />
+            <DiseaseCard
+              key={disease.id}
+              disease={disease}
+              imageSrc={SAMPLE_IMAGE_BY_CLASS.get(disease.id)}
+            />
           ))}
         </div>
       )}
 
-      <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-[11px] leading-relaxed text-slate-500 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-400">
-        <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
+      <div className="flex items-start gap-2 rounded-xl border border-line bg-panel/60 p-4 text-[10px] leading-relaxed text-faint">
+        <BookOpen
+          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lime"
+          aria-hidden="true"
+        />
         <p>
           Reference basis: PlantVillage class labels and general plant pathology
-          extension literature. Class names follow the dataset taxonomy, including
-          its historical spellings. This library is not a diagnostic key and
-          does not replace laboratory confirmation.
+          extension literature. Class names follow the dataset taxonomy,
+          including its historical spellings. This library is not a diagnostic
+          key and does not replace laboratory confirmation.
         </p>
       </div>
     </PageContainer>

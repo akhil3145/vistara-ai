@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, FileImage, HardDrive, Ruler, Upload } from 'lucide-react';
+import { Calendar, FileImage, HardDrive, Ruler, Upload, Waves } from 'lucide-react';
 import { formatBytes, formatFileType } from '../../lib/imageUtils';
 import type { ImageMetadata } from '../../types/prediction';
 
@@ -10,7 +10,7 @@ interface ImageMetadataPanelProps {
 export const ImageMetadataPanel: React.FC<ImageMetadataPanelProps> = ({ meta }) => {
   const dimensions =
     meta.width && meta.height
-      ? `${meta.width} x ${meta.height} px`
+      ? `${meta.width} × ${meta.height} px`
       : 'Reading dimensions';
   const size =
     meta.sizeBytes !== undefined ? formatBytes(meta.sizeBytes) : 'Illustrative asset';
@@ -31,7 +31,7 @@ export const ImageMetadataPanel: React.FC<ImageMetadataPanelProps> = ({ meta }) 
       value: meta.source === 'upload' ? 'Local upload' : 'Illustrative sample',
     },
     {
-      icon: FileImage,
+      icon: Waves,
       label: 'Format',
       value: formatFileType(meta.mimeType),
     },
@@ -57,18 +57,18 @@ export const ImageMetadataPanel: React.FC<ImageMetadataPanelProps> = ({ meta }) 
       {items.map((item) => (
         <div
           key={item.label}
-          className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-2 dark:border-navy-800 dark:bg-navy-950/40"
+          className="flex items-start gap-2 rounded-lg border border-line/70 bg-base/30 px-2.5 py-2"
         >
           <item.icon
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400"
+            className="mt-0.5 h-3 w-3 shrink-0 text-faint"
             aria-hidden="true"
           />
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            <div className="text-[8.5px] uppercase tracking-[0.12em] text-faint">
               {item.label}
             </div>
             <div
-              className="truncate text-[11px] text-slate-700 dark:text-slate-200"
+              className="truncate text-[10.5px] text-muted"
               title={item.title ?? item.value}
             >
               {item.value}
@@ -77,7 +77,7 @@ export const ImageMetadataPanel: React.FC<ImageMetadataPanelProps> = ({ meta }) 
         </div>
       ))}
       {meta.licenseNote && (
-        <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-2.5 py-2 text-[11px] leading-relaxed text-sky-800 dark:text-sky-300 sm:col-span-2">
+        <div className="rounded-lg border border-cyan/20 bg-cyan/[0.045] px-2.5 py-2 text-[10px] leading-relaxed text-muted sm:col-span-2">
           {meta.licenseNote}
         </div>
       )}

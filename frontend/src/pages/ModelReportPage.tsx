@@ -1,13 +1,16 @@
-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
+  BarChart3,
   CheckCircle2,
+  Cpu,
   FileJson,
   FileText,
   RefreshCw,
   ShieldCheck,
   Table2,
+  Target,
+  TrendingUp,
 } from 'lucide-react';
 
 import { getModelReport } from '../services/modelReportService';
@@ -18,6 +21,7 @@ import type {
 } from '../services/modelReportService';
 
 import { PageContainer } from '../components/layout/PageContainer';
+import { StatCard } from '../components/ui/StatCard';
 
 type ClassRow = {
   name: string;
@@ -86,8 +90,6 @@ export function ModelReportPage() {
 
   const loadReport = useCallback(async (signal?: AbortSignal) => {
     try {
-      setError(null);
-
       const response = await getModelReport(signal);
 
       if (!signal?.aborted) {
@@ -110,10 +112,14 @@ export function ModelReportPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void loadReport(controller.signal);
+    }, 0);
 
-    void loadReport(controller.signal);
-
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [loadReport, refreshKey]);
 
   const report = data?.report;
@@ -152,168 +158,192 @@ export function ModelReportPage() {
     data?.artifacts?.evaluationReportPresent === true &&
     missingFiles.length === 0;
 
+  const artifactRatio =
+    artifactFiles.length > 0
+      ? Math.round((foundFiles.length / artifactFiles.length) * 100)
+      : 0;
+
   const metricCards = [
     {
-      label: 'Test Accuracy',
+      label: 'Test accuracy',
       value: formatPercent(getMetric(metrics, 'accuracy')),
       description: 'Overall correct predictions on the reported test set.',
+      icon: Target,
       tone: 'teal' as const,
     },
     {
-      label: 'Macro Precision',
+      label: 'Macro precision',
       value: formatPercent(getMetric(metrics, 'macro_precision')),
       description: 'Unweighted average precision across classes.',
+      icon: BarChart3,
       tone: 'sky' as const,
     },
     {
-      label: 'Macro Recall',
+      label: 'Macro recall',
       value: formatPercent(getMetric(metrics, 'macro_recall')),
       description: 'Unweighted average recall across classes.',
+      icon: TrendingUp,
       tone: 'purple' as const,
     },
     {
-      label: 'Macro F1 Score',
+      label: 'Macro F1 score',
       value: formatPercent(getMetric(metrics, 'macro_f1')),
       description: 'Unweighted average F1 across classes.',
+      icon: CheckCircle2,
       tone: 'emerald' as const,
     },
     {
-      label: 'Weighted F1 Score',
+      label: 'Weighted F1 score',
       value: formatPercent(getMetric(metrics, 'weighted_f1')),
       description: 'F1 weighted by each class support.',
+      icon: CheckCircle2,
       tone: 'amber' as const,
     },
     {
-      label: 'Test Loss',
+      label: 'Test loss',
       value:
         typeof metrics?.test_loss === 'number'
           ? metrics.test_loss.toFixed(4)
           : '—',
       description: 'Reported loss on the test dataset.',
+      icon: AlertCircle,
       tone: 'slate' as const,
     },
   ];
 
   return (
     <PageContainer
+      eyebrow="Model evaluation · offline report"
       title="Model Evaluation Report"
+      subtitle="Held-out test metrics, per-class performance, and model artifact availability."
+      badge={
+        data ? (
+          <span
+            className={`chip ${
+              data.status === 'available' ? 'chip-lime' : 'chip-warning'
+            } font-mono`}
+          >
+            {data.status}
+          </span>
+        ) : undefined
+      }
       actions={
         <button
           type="button"
           onClick={() => {
+            setError(null);
             setLoading(true);
             setRefreshKey((current) => current + 1);
           }}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-secondary"
         >
-          <RefreshCw
-            size={15}
-            className={loading ? 'animate-spin' : ''}
-          />
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh report
         </button>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
-            <AlertCircle className="mt-0.5 shrink-0 text-rose-400" size={19} />
+          <div className="flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/[0.06] p-4">
+            <AlertCircle className="mt-0.5 shrink-0 text-danger" size={18} />
             <div>
-              <p className="font-medium text-rose-300">
+              <p className="text-sm font-semibold text-danger">
                 Could not load evaluation report
               </p>
-              <p className="mt-1 text-sm text-slate-400">{error}</p>
+              <p className="mt-1 text-xs text-muted">{error}</p>
             </div>
           </div>
         )}
 
         {loading && !data && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-sm text-slate-400">
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-panel p-6 text-sm text-muted">
+            <RefreshCw className="h-4 w-4 animate-spin text-accent" />
             Loading model evaluation report...
           </div>
         )}
 
         {!loading && !error && !data && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-sm text-slate-400">
+          <div className="rounded-xl border border-line bg-panel p-6 text-center text-sm text-muted">
             No report data is currently available.
           </div>
         )}
 
         {data && (
           <>
-            <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Status hero */}
+            <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-5 shadow-panel">
+              <div className="pointer-events-none absolute inset-0 bg-hero-spot opacity-60" />
+              <div className="relative flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-teal-500/10 p-3">
-                    <ShieldCheck className="text-teal-400" size={22} />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/25 bg-accent/10">
+                    <ShieldCheck className="text-accent" size={20} />
                   </div>
                   <div>
-                    <h2 className="font-semibold text-slate-100">
+                    <h2 className="text-sm font-semibold text-ink">
                       {data.status === 'available'
                         ? 'Evaluation report loaded'
                         : 'Evaluation report unavailable'}
                     </h2>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <p className="mt-1 max-w-xl text-[11px] leading-relaxed text-muted">
                       {data.message ?? 'Report status returned by backend.'}
                     </p>
                   </div>
                 </div>
 
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    data.status === 'available'
-                      ? 'bg-emerald-500/10 text-emerald-400'
-                      : 'bg-amber-500/10 text-amber-400'
-                  }`}
-                >
-                  {data.status}
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {report?.model_name && (
+                    <span className="chip">
+                      <Cpu className="h-3 w-3 text-accent" />
+                      {report.model_name}
+                    </span>
+                  )}
+                  {report?.dataset && (
+                    <span className="chip">{report.dataset}</span>
+                  )}
+                  <span className="chip">Generated {formatDate(data.generatedAt)}</span>
+                </div>
               </div>
             </section>
 
             {report && (
               <>
                 <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-  {metricCards.map((metric) => (
-    <div
-      key={metric.label}
-      className="rounded-xl border border-slate-800 bg-slate-900/50 p-5"
-    >
-      <p className="text-sm text-slate-400">{metric.label}</p>
+                  {metricCards.map((metric) => (
+                    <StatCard
+                      key={metric.label}
+                      label={metric.label}
+                      value={metric.value}
+                      hint={metric.description}
+                      icon={metric.icon}
+                      tone={metric.tone}
+                    />
+                  ))}
+                </section>
 
-      <p className="mt-3 text-2xl font-semibold text-slate-100">
-        {metric.value}
-      </p>
-
-      <p className="mt-2 text-xs leading-relaxed text-slate-500">
-        {metric.description}
-      </p>
-    </div>
-  ))}
-</section>
-
-                <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-                  <div className="mb-5 flex items-center gap-2">
-                    <FileText className="text-teal-400" size={19} />
-                    <h2 className="font-semibold text-slate-100">
-                      Model information
-                    </h2>
+                {/* Model info */}
+                <section className="panel p-4 sm:p-5">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan/25 bg-cyan/10">
+                      <FileText className="text-cyan" size={15} />
+                    </span>
+                    <div>
+                      <h2 className="text-sm font-semibold text-ink">
+                        Model information
+                      </h2>
+                      <p className="text-[10px] text-faint">
+                        Reported configuration and evaluation scope
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <InfoItem
-                      label="Model"
-                      value={report.model_name ?? '—'}
-                    />
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <InfoItem label="Model" value={report.model_name ?? '—'} />
                     <InfoItem
                       label="Architecture"
                       value={report.architecture ?? '—'}
                     />
-                    <InfoItem
-                      label="Dataset"
-                      value={report.dataset ?? '—'}
-                    />
+                    <InfoItem label="Dataset" value={report.dataset ?? '—'} />
                     <InfoItem
                       label="Dataset version"
                       value={report.dataset_version ?? '—'}
@@ -345,58 +375,76 @@ export function ModelReportPage() {
                   </div>
                 </section>
 
-                <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <Table2 className="text-teal-400" size={19} />
-                      <h2 className="font-semibold text-slate-100">
-                        Per-class performance
-                      </h2>
+                {/* Per-class table */}
+                <section className="table-shell">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3.5 sm:px-5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
+                        <Table2 className="text-accent" size={15} />
+                      </span>
+                      <div>
+                        <h2 className="text-sm font-semibold text-ink">
+                          Per-class performance
+                        </h2>
+                        <p className="text-[10px] text-faint">
+                          Precision, recall, and F1 by target class
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs text-slate-400">
-                      {classRows.length} classes
-                    </span>
+                    <span className="chip">{classRows.length} classes</span>
                   </div>
 
                   {classRows.length > 0 ? (
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[680px] text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-800 text-xs uppercase tracking-wide text-slate-500">
-                            <th className="px-3 py-3 font-medium">Class</th>
-                            <th className="px-3 py-3 text-right font-medium">
+                      <table className="w-full min-w-[680px] text-left text-xs">
+                        <thead className="table-head">
+                          <tr>
+                            <th className="px-4 py-2.5 font-medium">Class</th>
+                            <th className="px-4 py-2.5 text-right font-medium">
                               Precision
                             </th>
-                            <th className="px-3 py-3 text-right font-medium">
+                            <th className="px-4 py-2.5 text-right font-medium">
                               Recall
                             </th>
-                            <th className="px-3 py-3 text-right font-medium">
-                              F1 Score
+                            <th className="px-4 py-2.5 text-right font-medium">
+                              F1 score
                             </th>
-                            <th className="px-3 py-3 text-right font-medium">
+                            <th className="px-4 py-2.5 text-right font-medium">
                               Support
                             </th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-line/70">
                           {classRows.map((row) => (
                             <tr
                               key={row.name}
-                              className="border-b border-slate-800/70 last:border-0 hover:bg-slate-800/30"
+                              className="transition-colors hover:bg-raised/[0.28]"
                             >
-                              <td className="px-3 py-3 font-medium text-slate-200">
+                              <td className="px-4 py-2.5 text-[11px] font-medium text-ink">
                                 {row.name.replaceAll('___', ' / ')}
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums text-slate-300">
+                              <td className="px-4 py-2.5 text-right font-mono text-[10px] text-muted">
                                 {formatPercent(row.precision)}
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums text-slate-300">
+                              <td className="px-4 py-2.5 text-right font-mono text-[10px] text-muted">
                                 {formatPercent(row.recall)}
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums text-slate-300">
-                                {formatPercent(row.f1)}
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center justify-end gap-2">
+                                  <div className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-base/70 sm:block">
+                                    <div
+                                      className="h-full rounded-full bg-gradient-to-r from-accent to-lime"
+                                      style={{
+                                        width: `${Math.min(100, row.f1 * 100)}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="w-14 text-right font-mono text-[10px] text-ink">
+                                    {formatPercent(row.f1)}
+                                  </span>
+                                </div>
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums text-slate-400">
+                              <td className="px-4 py-2.5 text-right font-mono text-[10px] text-faint">
                                 {formatNumber(row.support)}
                               </td>
                             </tr>
@@ -405,7 +453,7 @@ export function ModelReportPage() {
                       </table>
                     </div>
                   ) : (
-                    <p className="py-6 text-center text-sm text-slate-400">
+                    <p className="py-8 text-center text-xs text-muted">
                       No per-class metrics found in the evaluation report.
                     </p>
                   )}
@@ -413,23 +461,44 @@ export function ModelReportPage() {
               </>
             )}
 
-            <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-              <div className="mb-4 flex items-center gap-2">
-                <FileJson className="text-teal-400" size={19} />
-                <h2 className="font-semibold text-slate-100">
-                  Model artifact status
-                </h2>
+            {/* Artifacts */}
+            <section className="panel p-4 sm:p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-lime/25 bg-lime/10">
+                    <FileJson className="text-lime" size={15} />
+                  </span>
+                  <div>
+                    <h2 className="text-sm font-semibold text-ink">
+                      Model artifact status
+                    </h2>
+                    <p className="text-[10px] text-faint">
+                      Expected evaluation and model bundle files
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`chip ${artifactReady ? 'chip-lime' : 'chip-warning'}`}
+                >
+                  {artifactReady ? (
+                    <CheckCircle2 className="h-3 w-3" />
+                  ) : (
+                    <AlertCircle className="h-3 w-3" />
+                  )}
+                  {foundFiles.length} of {artifactFiles.length} found
+                </span>
               </div>
 
-              <div className="mb-4 flex items-center gap-2">
-                {artifactReady ? (
-                  <CheckCircle2 className="text-emerald-400" size={18} />
-                ) : (
-                  <AlertCircle className="text-amber-400" size={18} />
-                )}
-                <span className="text-sm text-slate-300">
-                  {foundFiles.length} of {artifactFiles.length} expected artifacts found
-                </span>
+              <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-base/70">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    artifactReady
+                      ? 'bg-gradient-to-r from-lime to-accent'
+                      : 'bg-warning'
+                  }`}
+                  style={{ width: `${artifactRatio}%` }}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -439,14 +508,16 @@ export function ModelReportPage() {
                   return (
                     <div
                       key={file}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-3"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-line bg-base/30 px-3 py-2.5"
                     >
-                      <span className="break-all text-sm text-slate-300">
+                      <span className="break-all font-mono text-[10px] text-muted">
                         {file}
                       </span>
                       <span
-                        className={`shrink-0 text-xs ${
-                          found ? 'text-emerald-400' : 'text-rose-400'
+                        className={`shrink-0 rounded-full border px-2 py-0.5 font-mono text-[8.5px] ${
+                          found
+                            ? 'border-lime/30 bg-lime/10 text-lime'
+                            : 'border-danger/30 bg-danger/10 text-danger'
                         }`}
                       >
                         {found ? 'Found' : 'Missing'}
@@ -457,35 +528,36 @@ export function ModelReportPage() {
               </div>
 
               {missingFiles.length > 0 && (
-                <p className="mt-3 text-sm text-amber-400">
+                <p className="mt-3 break-words text-[10px] text-warning">
                   Missing: {missingFiles.join(', ')}
                 </p>
               )}
             </section>
 
-            <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
-              <div className="mb-2 flex items-center gap-2">
-                <AlertCircle className="text-amber-400" size={18} />
-                <h2 className="font-semibold text-slate-100">
+            {/* Limitations */}
+            <section className="rounded-2xl border border-warning/20 bg-warning/[0.045] p-4 sm:p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <AlertCircle className="text-warning" size={17} />
+                <h2 className="text-sm font-semibold text-warning">
                   Evaluation limitations
                 </h2>
               </div>
 
-              <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-400">
-                <li>
+              <ul className="space-y-2 pl-5 text-[11px] leading-relaxed text-muted">
+                <li className="list-disc">
                   Metrics are reported from the supplied held-out test
                   evaluation artifact; this page does not independently
                   reproduce the training or evaluation process.
                 </li>
-                <li>
+                <li className="list-disc">
                   Softmax scores are not necessarily calibrated probabilities
                   and should not be interpreted as guaranteed confidence.
                 </li>
-                <li>
+                <li className="list-disc">
                   A confusion matrix and training curves are not included in
                   the available evaluation report.
                 </li>
-                <li>
+                <li className="list-disc">
                   Predictions are decision-support outputs, not definitive
                   agricultural diagnoses.
                 </li>
@@ -500,11 +572,11 @@ export function ModelReportPage() {
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="mb-1 text-xs text-slate-500">{label}</p>
-      <p className="break-words text-sm font-medium text-slate-200">
-        {value}
+    <div className="rounded-lg border border-line/60 bg-base/25 px-3 py-2.5">
+      <p className="mb-1 text-[9px] uppercase tracking-[0.1em] text-faint">
+        {label}
       </p>
+      <p className="break-words text-[11px] font-medium text-ink">{value}</p>
     </div>
   );
 }

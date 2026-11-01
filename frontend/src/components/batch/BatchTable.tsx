@@ -22,20 +22,17 @@ export const BatchTable: React.FC<BatchTableProps> = ({
   onRemove,
 }) => {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-navy-800 dark:bg-navy-900">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 dark:border-navy-800">
+    <section className="table-shell">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3.5 sm:px-5">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-            Batch Records
-          </h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Per-item classification outcomes. CSV export follows the filters below.
+          <h3 className="text-sm font-semibold text-ink">Batch records</h3>
+          <p className="text-[10px] text-faint">
+            Per-item classification outcomes. CSV export follows the active
+            filters.
           </p>
         </div>
         {items.some((item) => item.prediction && !item.prediction.isDemo) ? (
-          <span className="inline-flex items-center gap-1 rounded border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-teal-600 dark:text-teal-400">
-            REAL INFERENCE
-          </span>
+          <span className="chip chip-accent font-mono">REAL INFERENCE</span>
         ) : (
           <DemoBadge label="DEMO DATA" />
         )}
@@ -45,19 +42,19 @@ export const BatchTable: React.FC<BatchTableProps> = ({
         <div className="p-4">
           <EmptyState
             icon={UploadCloud}
-            title="No images in the batch"
-            description="Add JPEG, PNG, or WEBP images with the dropzone above, or load the illustrative demo samples."
-            hint="Uploaded leaves are analyzed live by MobileNetV2 at POST /api/v1/predict/batch."
+            title="No images in this view"
+            description="Add JPEG, PNG, or WEBP images with the dropzone above, or load the illustrative demo samples. If records exist, check your active filters."
+            hint="Uploaded leaves are analyzed live at POST /api/v1/predict/batch."
           />
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[780px] text-left text-xs">
+          <table className="w-full min-w-[820px] text-left text-xs">
             <caption className="sr-only">
-              Batch analysis records with simulated predictions. All results are
-              DEMO DATA.
+              Batch analysis records with prediction source and confidence
+              details.
             </caption>
-            <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500 dark:bg-navy-950/60 dark:text-slate-400">
+            <thead className="table-head">
               <tr>
                 <th scope="col" className="px-4 py-2.5 font-medium">
                   Image
@@ -82,7 +79,7 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-navy-800">
+            <tbody className="divide-y divide-line/70">
               {items.map((item) => {
                 const confidence = confidenceOf(item);
                 const needsReview =
@@ -91,10 +88,10 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                 return (
                   <tr
                     key={item.id}
-                    className="align-middle transition-colors hover:bg-slate-50/70 dark:hover:bg-navy-850/40"
+                    className="group align-middle transition-colors hover:bg-raised/[0.28]"
                   >
                     <td className="px-4 py-2.5">
-                      <div className="h-11 w-11 overflow-hidden rounded-md border border-slate-200 bg-slate-100 dark:border-navy-800 dark:bg-navy-950">
+                      <div className="h-10 w-10 overflow-hidden rounded-lg border border-line bg-base">
                         <img
                           src={item.src}
                           alt={`Preview of ${item.meta.name}`}
@@ -102,25 +99,29 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                         />
                       </div>
                     </td>
+
                     <td className="max-w-[210px] px-4 py-2.5">
                       <div
-                        className="truncate font-medium text-slate-900 dark:text-white"
+                        className="truncate text-[11px] font-medium text-ink"
                         title={item.meta.name}
                       >
                         {item.meta.name}
                       </div>
-                      <div className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
-                        {item.meta.source === 'upload' ? 'Local upload' : 'Illustrative sample'}
+                      <div className="mt-0.5 text-[9.5px] text-faint">
+                        {item.meta.source === 'upload'
+                          ? 'Local upload'
+                          : 'Illustrative sample'}
                         {item.meta.sizeBytes !== undefined
                           ? ` · ${formatBytes(item.meta.sizeBytes)}`
                           : ''}
                       </div>
                     </td>
+
                     <td className="max-w-[250px] px-4 py-2.5">
                       {item.status === 'complete' && item.prediction ? (
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span
-                            className="max-w-[190px] truncate text-slate-700 dark:text-slate-200"
+                            className="max-w-[180px] truncate text-[11px] text-muted"
                             title={item.prediction.classes
                               .map(
                                 (c, i) =>
@@ -133,20 +134,20 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                           {item.prediction.isDemo ? (
                             <DemoBadge label="DEMO" />
                           ) : (
-                            <span className="rounded border border-teal-500/30 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[9px] font-medium text-teal-600 dark:text-teal-400">
+                            <span className="rounded border border-accent/30 bg-accent/10 px-1 py-0.5 font-mono text-[8px] font-semibold text-accent">
                               REAL
                             </span>
                           )}
                         </div>
                       ) : item.status === 'error' ? (
                         <span
-                          className="text-rose-600 dark:text-rose-400"
+                          className="text-[11px] text-danger"
                           title={item.error}
                         >
                           {item.error ?? 'Analysis error'}
                         </span>
                       ) : item.status === 'analyzing' ? (
-                        <span className="inline-flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] text-cyan">
                           <Loader2
                             className="h-3.5 w-3.5 animate-spin"
                             aria-hidden="true"
@@ -156,23 +157,24 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                             : 'Running demo'}
                         </span>
                       ) : (
-                        <span className="text-slate-400 dark:text-slate-500">
-                          Queued
-                        </span>
+                        <span className="text-[11px] text-faint">Queued</span>
                       )}
                     </td>
+
                     <td className="px-4 py-2.5">
                       {confidence === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-faint">—</span>
                       ) : (
                         <div className="w-24">
-                          <div className="flex items-center justify-between font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                          <div className="flex items-center justify-between font-mono text-[10px] text-muted">
                             <span>{confidence.toFixed(1)}%</span>
                           </div>
-                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-navy-950">
+                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-base/70">
                             <div
                               className={`h-full rounded-full ${
-                                needsReview ? 'bg-amber-500' : 'bg-teal-500'
+                                needsReview
+                                  ? 'bg-warning'
+                                  : 'bg-gradient-to-r from-accent to-lime'
                               }`}
                               style={{ width: `${confidence}%` }}
                             />
@@ -180,33 +182,35 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                         </div>
                       )}
                     </td>
+
                     <td className="px-4 py-2.5">
                       {item.status === 'complete' ? (
                         <span
-                          className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] ${
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[9px] ${
                             needsReview
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                              ? 'border-warning/30 bg-warning/10 text-warning'
+                              : 'border-lime/30 bg-lime/10 text-lime'
                           }`}
                         >
                           {needsReview ? 'Needs review' : 'Confident'}
                         </span>
                       ) : item.status === 'error' ? (
-                        <span className="inline-flex items-center gap-1 rounded border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] text-rose-700 dark:text-rose-300">
-                          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-danger/30 bg-danger/10 px-2 py-0.5 font-mono text-[9px] text-danger">
+                          <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
                           Error
                         </span>
                       ) : item.status === 'analyzing' ? (
-                        <span className="font-mono text-[10px] text-sky-600 dark:text-sky-400">
+                        <span className="rounded-full border border-cyan/30 bg-cyan/10 px-2 py-0.5 font-mono text-[9px] text-cyan">
                           Analyzing
                         </span>
                       ) : (
-                        <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                        <span className="rounded-full border border-line px-2 py-0.5 font-mono text-[9px] text-faint">
                           Queued
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+
+                    <td className="px-4 py-2.5 font-mono text-[10px] text-muted">
                       {item.prediction ? (
                         <span
                           title={
@@ -218,16 +222,17 @@ export const BatchTable: React.FC<BatchTableProps> = ({
                           {item.prediction.latencyMs} ms
                         </span>
                       ) : (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-faint">—</span>
                       )}
                     </td>
+
                     <td className="px-4 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={() => onRemove(item.id)}
                         disabled={disabled}
                         aria-label={`Remove ${item.meta.name} from batch`}
-                        className="inline-flex items-center justify-center rounded-md border border-transparent p-1.5 text-slate-400 transition-colors hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-rose-400"
+                        className="inline-flex items-center justify-center rounded-md border border-transparent p-1.5 text-faint transition-colors hover:border-danger/30 hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
@@ -239,6 +244,6 @@ export const BatchTable: React.FC<BatchTableProps> = ({
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 };

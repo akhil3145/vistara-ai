@@ -8,11 +8,11 @@ interface ConfidenceRingProps {
   tone?: RingTone;
 }
 
-const TONE_CLASSES: Record<RingTone, string> = {
-  teal: 'text-teal-500',
-  amber: 'text-amber-500',
-  rose: 'text-rose-500',
-  slate: 'text-slate-400',
+const TONE_COLORS: Record<RingTone, string> = {
+  teal: 'var(--c-accent)',
+  amber: 'var(--c-warning)',
+  rose: 'var(--c-danger)',
+  slate: 'var(--c-faint)',
 };
 
 export const ConfidenceRing: React.FC<ConfidenceRingProps> = ({
@@ -24,6 +24,7 @@ export const ConfidenceRing: React.FC<ConfidenceRingProps> = ({
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
+  const color = TONE_COLORS[tone];
 
   return (
     <div
@@ -31,34 +32,39 @@ export const ConfidenceRing: React.FC<ConfidenceRingProps> = ({
       role="img"
       aria-label={`${label}: ${clamped.toFixed(1)} percent`}
     >
-      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
+      <div
+        className="absolute inset-2 rounded-full opacity-25 blur-xl"
+        style={{ backgroundColor: color }}
+      />
+      <svg viewBox="0 0 100 100" className="relative h-full w-full -rotate-90">
         <circle
           cx="50"
           cy="50"
           r={radius}
           fill="none"
           stroke="currentColor"
-          strokeWidth="8"
-          className="text-slate-200 dark:text-navy-800"
+          strokeWidth="7"
+          className="text-line/70"
         />
         <circle
           cx="50"
           cy="50"
           r={radius}
           fill="none"
-          stroke="currentColor"
-          strokeWidth="8"
+          stroke={color}
+          strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={offset}
-          className={TONE_CLASSES[tone]}
+          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-mono text-2xl font-bold text-slate-900 dark:text-white">
-          {clamped.toFixed(1)}%
+        <span className="font-mono text-[26px] font-semibold leading-none tracking-tight text-ink">
+          {clamped.toFixed(1)}
+          <span className="text-sm">%</span>
         </span>
-        <span className="mt-0.5 max-w-[92px] text-center text-[10px] leading-tight text-slate-500 dark:text-slate-400">
+        <span className="mt-1 max-w-[88px] text-center text-[9px] uppercase tracking-[0.12em] text-faint">
           {label}
         </span>
       </div>

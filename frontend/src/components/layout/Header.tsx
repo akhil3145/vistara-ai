@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Menu, Sun, Moon, Cpu, Database, ChevronRight } from 'lucide-react';
+import { Menu, Sun, Moon, Cpu, Database, ChevronRight, Sprout } from 'lucide-react';
 import type { PageId } from '../../types/navigation';
 import { NAV_ITEMS } from '../../types/navigation';
 import { useTheme } from '../../context/useTheme';
@@ -11,6 +10,16 @@ interface HeaderProps {
   isDemoMode?: boolean;
 }
 
+const SECTION_BY_PAGE: Record<PageId, string> = {
+  overview: 'Workspace',
+  scanner: 'Workspace',
+  batch: 'Workspace',
+  monitoring: 'Intelligence',
+  report: 'Intelligence',
+  library: 'Reference',
+  help: 'Support',
+};
+
 export const Header: React.FC<HeaderProps> = ({
   currentPage,
   onOpenMobileMenu,
@@ -20,110 +29,109 @@ export const Header: React.FC<HeaderProps> = ({
   const currentNav = NAV_ITEMS.find((item) => item.id === currentPage);
 
   return (
-    <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between gap-3 border-b border-[#20334b] bg-[#0e192b]/95 px-4 backdrop-blur-xl sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-line bg-sidebar/85 backdrop-blur-xl">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
-      {/* Left: Navigation and page title */}
-      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-        <button
-          type="button"
-          onClick={onOpenMobileMenu}
-          className="rounded-lg border border-[#30465f] p-2 text-slate-400 transition-colors hover:bg-[#192b43] hover:text-white lg:hidden"
-          aria-label="Open navigation menu"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={onOpenMobileMenu}
+            className="rounded-lg border border-line bg-raised/60 p-2 text-muted transition-colors hover:border-accent/30 hover:text-ink lg:hidden"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500 sm:inline">
-              Workspace
+          <div className="flex items-center gap-2 lg:hidden">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
+              <Sprout className="h-4 w-4" />
             </span>
-
-            <ChevronRight className="hidden h-3 w-3 text-slate-600 sm:block" />
-
-            <h1 className="truncate text-sm font-semibold tracking-tight text-slate-100 sm:text-[15px]">
-              {currentNav?.label ?? 'Dashboard'}
-            </h1>
           </div>
 
-          <p className="mt-0.5 hidden truncate text-[11px] text-slate-500 sm:block">
-            {currentNav?.shortDescription ?? 'Plant Health Intelligence'}
-          </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-faint md:inline">
+                Vistara AI
+              </span>
+              <ChevronRight className="hidden h-3 w-3 text-line-strong md:block" />
+              <span className="hidden text-[9px] font-semibold uppercase tracking-[0.14em] text-faint sm:inline">
+                {SECTION_BY_PAGE[currentPage]}
+              </span>
+              <ChevronRight className="hidden h-3 w-3 text-line-strong sm:block" />
+
+              <h1 className="truncate text-[13px] font-semibold tracking-tight text-ink sm:text-sm">
+                {currentNav?.label ?? 'Dashboard'}
+              </h1>
+            </div>
+
+            <p className="mt-0.5 hidden truncate text-[10px] text-faint sm:block">
+              {currentNav?.shortDescription ?? 'Plant health intelligence'}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Right: System status and controls */}
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="hidden items-center gap-2 rounded-lg border border-line bg-raised/45 px-2.5 py-1.5 md:flex">
+            <Cpu className="h-3 w-3 text-accent" />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted">
+              MobileNetV2
+            </span>
+          </div>
 
-        {/* Model indicator */}
-        <div className="hidden items-center gap-2 rounded-lg border border-[#30465f] bg-[#142238] px-3 py-2 md:flex">
-          <Cpu className="h-3.5 w-3.5 text-teal-400" />
-
-          <span className="text-[10px] font-medium tracking-wide text-slate-300">
-            MobileNetV2
-          </span>
-        </div>
-
-        {/* Backend status */}
-        <div
-          className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 sm:px-3 ${
-            isDemoMode
-              ? 'border-amber-400/20 bg-amber-400/[0.07]'
-              : 'border-emerald-400/20 bg-emerald-400/[0.07]'
-          }`}
-          role="status"
-          aria-label={isDemoMode ? 'Demo mode active' : 'Backend ready'}
-        >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
+          <div
+            className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 ${
               isDemoMode
-                ? 'bg-amber-400 animate-pulse'
-                : 'bg-emerald-400'
+                ? 'border-warning/25 bg-warning/[0.07]'
+                : 'border-lime/25 bg-lime/[0.07]'
             }`}
-          />
-
-          <span
-            className={`hidden text-[10px] font-semibold tracking-[0.08em] sm:inline ${
-              isDemoMode ? 'text-amber-300' : 'text-emerald-300'
-            }`}
+            role="status"
+            aria-label={isDemoMode ? 'Demo mode active' : 'Backend ready'}
           >
-            {isDemoMode ? 'DEMO MODE' : 'BACKEND READY'}
-          </span>
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isDemoMode ? 'bg-warning animate-pulse-soft' : 'bg-lime'
+              }`}
+            />
+            <span
+              className={`hidden text-[9px] font-bold uppercase tracking-[0.1em] sm:inline ${
+                isDemoMode ? 'text-warning' : 'text-lime'
+              }`}
+            >
+              {isDemoMode ? 'Demo mode' : 'Backend ready'}
+            </span>
+            <span
+              className={`text-[9px] font-bold uppercase tracking-[0.1em] sm:hidden ${
+                isDemoMode ? 'text-warning' : 'text-lime'
+              }`}
+            >
+              {isDemoMode ? 'Demo' : 'Live'}
+            </span>
+          </div>
 
-          <span
-            className={`text-[10px] font-semibold sm:hidden ${
-              isDemoMode ? 'text-amber-300' : 'text-emerald-300'
-            }`}
+          <div className="hidden items-center gap-2 rounded-lg border border-line bg-raised/45 px-2.5 py-1.5 xl:flex">
+            <Database className="h-3 w-3 text-cyan" />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted">
+              SQLite
+            </span>
+          </div>
+
+          <span className="hidden h-6 w-px bg-line sm:block" />
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-raised/45 text-muted transition-all hover:border-accent/30 hover:text-accent"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label="Toggle theme"
           >
-            {isDemoMode ? 'DEMO' : 'LIVE'}
-          </span>
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4 text-warning" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
         </div>
-
-        {/* Database indicator */}
-        <div className="hidden items-center gap-2 rounded-lg border border-[#30465f] bg-[#142238] px-3 py-2 xl:flex">
-          <Database className="h-3.5 w-3.5 text-sky-400" />
-          <span className="text-[10px] font-medium text-slate-300">
-            SQLite
-          </span>
-        </div>
-
-        {/* System indicator */}
-        <div className="hidden h-8 w-px bg-[#30465f] sm:block" />
-
-        {/* Theme toggle */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#30465f] bg-[#142238] text-slate-400 transition-all hover:border-teal-400/30 hover:bg-[#1c3049] hover:text-teal-300"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? (
-            <Sun className="h-4 w-4 text-amber-400" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-        </button>
       </div>
     </header>
   );

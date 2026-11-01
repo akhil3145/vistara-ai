@@ -34,34 +34,38 @@ export const BatchKpis: React.FC<BatchKpisProps> = ({ items, threshold }) => {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        label="Total Processed"
+        label="Total processed"
         value={`${completed.length}`}
-        hint={`of ${items.length} queued item${items.length === 1 ? '' : 's'}`}
+        hint={`of ${items.length} item${items.length === 1 ? '' : 's'} in queue`}
         icon={Layers}
         tone="sky"
       />
       <StatCard
-        label="Mean Top-1 Score"
+        label="Mean top-1 score"
         value={meanConfidence === null ? '—' : `${meanConfidence.toFixed(1)}%`}
         hint={
           hasRealInference
-            ? 'Mean of top-1 class scores'
+            ? 'Mean of real top-1 class scores'
             : 'Mean of simulated top-1 scores'
         }
         icon={Target}
         tone="teal"
       />
       <StatCard
-        label="Needing Review"
+        label="Needing review"
         value={`${reviewCount}`}
         hint={`Below the ${threshold}% review threshold`}
         icon={ShieldAlert}
         tone="amber"
       />
       <StatCard
-        label="Most Frequent Class"
+        label="Most frequent class"
         value={mode ? mode[0] : '—'}
-        hint={mode ? `${mode[1]} occurrence${mode[1] === 1 ? '' : 's'}` : 'No completed rows'}
+        hint={
+          mode
+            ? `${mode[1]} occurrence${mode[1] === 1 ? '' : 's'}`
+            : 'No completed rows'
+        }
         icon={BarChart3}
         tone="purple"
       />

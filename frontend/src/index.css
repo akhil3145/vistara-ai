@@ -3,69 +3,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =========================================
-   VISTARA AI — DESIGN SYSTEM
-   GeoVision-inspired visual foundation
-========================================= */
+/* =========================================================
+   VISTARA AI — PREMIUM DESIGN SYSTEM
+   Deep-navy agricultural intelligence surface tokens
+========================================================= */
 
 @layer base {
   :root {
     color-scheme: light;
 
-    --bg-page: #f4f7fb;
-    --bg-panel: #ffffff;
-    --bg-card: #f8fafc;
-    --bg-elevated: #ffffff;
-    --bg-hover: #edf3f8;
+    --c-base: 244 247 251;
+    --c-sidebar: 255 255 255;
+    --c-panel: 255 255 255;
+    --c-raised: 248 250 252;
+    --c-line: 226 232 240;
+    --c-line-strong: 203 213 225;
 
-    --border-subtle: #e2e8f0;
-    --border-strong: #cbd5e1;
+    --c-ink: 15 23 42;
+    --c-muted: 71 85 105;
+    --c-faint: 100 116 139;
 
-    --text-primary: #122033;
-    --text-secondary: #475569;
-    --text-muted: #8492a6;
+    --c-accent: 13 148 136;
+    --c-lime: 101 163 13;
+    --c-cyan: 2 132 199;
+    --c-success: 16 185 129;
+    --c-warning: 217 119 6;
+    --c-danger: 225 29 72;
 
-    --accent-teal: #0d9488;
-    --accent-teal-bright: #14b8a6;
-    --accent-sky: #0284c7;
-
-    --status-success: #10b981;
-    --status-warning: #f59e0b;
-    --status-danger: #f43f5e;
-
-    --shadow-panel: 0 4px 20px rgba(15, 23, 42, 0.04);
+    --header-bg: 255 255 255;
   }
 
   .dark {
     color-scheme: dark;
 
-    --bg-page: #080f1d;
-    --bg-panel: #0e192b;
-    --bg-card: #142238;
-    --bg-elevated: #192b43;
-    --bg-hover: #1c3049;
+    --c-base: 8 19 33;
+    --c-sidebar: 11 23 40;
+    --c-panel: 16 31 51;
+    --c-raised: 22 42 64;
+    --c-line: 38 59 80;
+    --c-line-strong: 56 82 108;
 
-    --border-subtle: #20334b;
-    --border-strong: #30465f;
+    --c-ink: 241 245 249;
+    --c-muted: 148 163 184;
+    --c-faint: 100 116 139;
 
-    --text-primary: #edf5ff;
-    --text-secondary: #b0bfd1;
-    --text-muted: #778ba3;
+    --c-accent: 32 201 176;
+    --c-lime: 132 204 22;
+    --c-cyan: 56 189 248;
+    --c-success: 52 211 153;
+    --c-warning: 251 191 36;
+    --c-danger: 251 113 133;
 
-    --accent-teal: #2dd4bf;
-    --accent-teal-bright: #5eead4;
-    --accent-sky: #38bdf8;
-
-    --status-success: #34d399;
-    --status-warning: #fbbf24;
-    --status-danger: #fb7185;
-
-    --shadow-panel: 0 8px 30px rgba(0, 0, 0, 0.16);
+    --header-bg: 11 23 40;
   }
 
   * {
+    border-color: rgb(var(--c-line));
     box-sizing: border-box;
-    border-color: var(--border-subtle);
   }
 
   html {
@@ -76,27 +70,15 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: var(--bg-page);
-    color: var(--text-primary);
-
-    font-family:
-      Inter,
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
-
+    background-color: rgb(var(--c-base));
+    color: rgb(var(--c-ink));
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+      BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 14px;
     line-height: 1.5;
-
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
-    transition:
-      background-color 180ms ease,
-      color 180ms ease;
+    transition: background-color 180ms ease, color 180ms ease;
   }
 
   button,
@@ -115,12 +97,12 @@
   }
 
   ::selection {
-    background: rgba(45, 212, 191, 0.25);
-    color: var(--text-primary);
+    background: rgb(var(--c-accent) / 0.26);
+    color: rgb(var(--c-ink));
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent-teal);
+    outline: 2px solid rgb(var(--c-accent));
     outline-offset: 3px;
   }
 
@@ -128,51 +110,268 @@
   svg {
     display: block;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.018em;
+  }
 }
 
-/* =========================================
-   REUSABLE VISTARA COMPONENT STYLES
-========================================= */
+/* =========================================================
+   COMPONENT PRIMITIVES
+========================================================= */
 
 @layer components {
-  .vistara-panel {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-    border-radius: 14px;
-    box-shadow: var(--shadow-panel);
+  .app-bg {
+    background-color: rgb(var(--c-base));
+    background-image:
+      radial-gradient(ellipse 90% 55% at 82% -8%, rgb(var(--c-accent) / 0.09), transparent 62%),
+      radial-gradient(ellipse 70% 50% at 4% 8%, rgb(var(--c-cyan) / 0.06), transparent 58%);
   }
 
-  .vistara-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
+  .panel {
+    background-color: rgb(var(--c-panel));
+    border: 1px solid rgb(var(--c-line));
+    border-radius: 16px;
+    box-shadow: 0 18px 45px -34px rgba(0, 0, 0, 0.6);
+  }
+
+  .panel-elevated {
+    background-image: linear-gradient(
+      150deg,
+      rgb(var(--c-raised) / 0.9) 0%,
+      rgb(var(--c-panel) / 0.65) 55%,
+      rgb(var(--c-panel)) 100%
+    );
+    border: 1px solid rgb(var(--c-line));
+    border-radius: 16px;
+    box-shadow: 0 22px 55px -36px rgba(0, 0, 0, 0.65);
+  }
+
+  .panel-inset {
+    background-color: rgb(var(--c-base) / 0.55);
+    border: 1px solid rgb(var(--c-line));
     border-radius: 12px;
   }
 
+  .panel-hover {
+    transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease,
+      background-color 200ms ease;
+  }
+
+  .panel-hover:hover {
+    border-color: rgb(var(--c-accent) / 0.32);
+    box-shadow: 0 24px 60px -38px rgba(32, 201, 176, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: rgb(var(--c-faint));
+  }
+
+  .text-gradient {
+    background: linear-gradient(
+      100deg,
+      rgb(var(--c-ink)) 0%,
+      rgb(var(--c-ink)) 42%,
+      rgb(var(--c-accent)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .divider {
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--c-line)) 18%,
+      rgb(var(--c-line)) 82%,
+      transparent
+    );
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--c-line));
+    background-color: rgb(var(--c-raised) / 0.7);
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: rgb(var(--c-muted));
+    white-space: nowrap;
+  }
+
+  .chip-accent {
+    border-color: rgb(var(--c-accent) / 0.3);
+    background-color: rgb(var(--c-accent) / 0.1);
+    color: rgb(var(--c-accent));
+  }
+
+  .chip-cyan {
+    border-color: rgb(var(--c-cyan) / 0.3);
+    background-color: rgb(var(--c-cyan) / 0.1);
+    color: rgb(var(--c-cyan));
+  }
+
+  .chip-lime {
+    border-color: rgb(var(--c-lime) / 0.3);
+    background-color: rgb(var(--c-lime) / 0.1);
+    color: rgb(var(--c-lime));
+  }
+
+  .chip-warning {
+    border-color: rgb(var(--c-warning) / 0.32);
+    background-color: rgb(var(--c-warning) / 0.1);
+    color: rgb(var(--c-warning));
+  }
+
+  .chip-danger {
+    border-color: rgb(var(--c-danger) / 0.32);
+    background-color: rgb(var(--c-danger) / 0.1);
+    color: rgb(var(--c-danger));
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgb(var(--c-accent)) 0%, #17b39c 100%);
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #062b28;
+    box-shadow: 0 12px 30px -16px rgb(var(--c-accent) / 0.7);
+    transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.07);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.45;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1px solid rgb(var(--c-line));
+    background-color: rgb(var(--c-raised) / 0.55);
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgb(var(--c-ink));
+    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    border-color: rgb(var(--c-accent) / 0.4);
+    background-color: rgb(var(--c-raised));
+    color: rgb(var(--c-accent));
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.45;
+  }
+
+  .field {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgb(var(--c-line));
+    background-color: rgb(var(--c-base) / 0.55);
+    padding: 9px 12px;
+    font-size: 12px;
+    color: rgb(var(--c-ink));
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .field::placeholder {
+    color: rgb(var(--c-faint));
+  }
+
+  .field:focus {
+    border-color: rgb(var(--c-accent) / 0.6);
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(var(--c-accent) / 0.12);
+  }
+
+  .table-shell {
+    overflow: hidden;
+    border: 1px solid rgb(var(--c-line));
+    border-radius: 16px;
+    background-color: rgb(var(--c-panel));
+  }
+
+  .table-head {
+    background-color: rgb(var(--c-base) / 0.45);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgb(var(--c-faint));
+  }
+
+  .grid-overlay {
+    background-image:
+      linear-gradient(rgb(var(--c-line) / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--c-line) / 0.5) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 78%);
+  }
+
+  .scan-line {
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgb(var(--c-accent) / 0.7) 48%,
+      rgb(var(--c-accent) / 0.9) 50%,
+      transparent
+    );
+  }
+
+  .vistara-panel {
+    @apply panel;
+  }
+
+  .vistara-card {
+    @apply panel-inset;
+  }
+
   .vistara-muted {
-    color: var(--text-muted);
+    color: rgb(var(--c-muted));
   }
 
   .vistara-accent {
-    color: var(--accent-teal);
-  }
-
-  .vistara-gradient {
-    background: linear-gradient(
-      135deg,
-      #0f766e 0%,
-      #0d9488 50%,
-      #0891b2 100%
-    );
+    color: rgb(var(--c-accent));
   }
 }
 
-/* =========================================
+/* =========================================================
    SCROLLBARS
-========================================= */
+========================================================= */
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -180,24 +379,22 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(119, 139, 163, 0.3);
+  background: rgb(var(--c-faint) / 0.32);
   border-radius: 20px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(119, 139, 163, 0.55);
+  background: rgb(var(--c-faint) / 0.55);
 }
-
-/* Firefox */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #40546b transparent;
+  scrollbar-color: rgb(var(--c-faint) / 0.4) transparent;
 }
 
-/* =========================================
+/* =========================================================
    RESPONSIVE & ACCESSIBILITY
-========================================= */
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   *,

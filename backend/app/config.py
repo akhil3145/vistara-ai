@@ -48,6 +48,9 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5173",
         ]
     )
+    cors_origin_regex: str | None = Field(
+        default=r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$"
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
