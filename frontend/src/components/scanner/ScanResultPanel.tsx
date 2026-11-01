@@ -267,7 +267,9 @@ export const ScanResultPanel: React.FC<ScanResultPanelProps> = ({
             <ScoreBarList scores={prediction.classes} />
           </section>
 
-          <GradCamPlaceholder />
+          <GradCamPlaceholder
+            image={prediction.isDemo ? null : prediction.gradcamImage}
+          />
 
           <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/60 p-3 text-[11px] leading-relaxed text-slate-500 dark:border-navy-800 dark:bg-navy-950/40 dark:text-slate-400">
             <ScanLine className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-500" aria-hidden="true" />

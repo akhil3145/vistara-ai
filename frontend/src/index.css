@@ -1,48 +1,175 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================
+   VISTARA AI — DESIGN SYSTEM
+   GeoVision-inspired visual foundation
+========================================= */
+
 @layer base {
   :root {
-    --bg-page: #f8fafc;
+    color-scheme: light;
+
+    --bg-page: #f4f7fb;
     --bg-panel: #ffffff;
-    --bg-card: #f1f5f9;
+    --bg-card: #f8fafc;
+    --bg-elevated: #ffffff;
+    --bg-hover: #edf3f8;
+
     --border-subtle: #e2e8f0;
-    --text-primary: #0f172a;
+    --border-strong: #cbd5e1;
+
+    --text-primary: #122033;
     --text-secondary: #475569;
-    --text-muted: #64748b;
+    --text-muted: #8492a6;
+
     --accent-teal: #0d9488;
+    --accent-teal-bright: #14b8a6;
     --accent-sky: #0284c7;
+
+    --status-success: #10b981;
+    --status-warning: #f59e0b;
+    --status-danger: #f43f5e;
+
+    --shadow-panel: 0 4px 20px rgba(15, 23, 42, 0.04);
   }
 
   .dark {
-    --bg-page: #0b1120;
-    --bg-panel: #131e36;
-    --bg-card: #1a2849;
-    --border-subtle: #223354;
-    --text-primary: #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    --accent-teal: #14b8a6;
-    --accent-sky: #0ea5e9;
+    color-scheme: dark;
+
+    --bg-page: #080f1d;
+    --bg-panel: #0e192b;
+    --bg-card: #142238;
+    --bg-elevated: #192b43;
+    --bg-hover: #1c3049;
+
+    --border-subtle: #20334b;
+    --border-strong: #30465f;
+
+    --text-primary: #edf5ff;
+    --text-secondary: #b0bfd1;
+    --text-muted: #778ba3;
+
+    --accent-teal: #2dd4bf;
+    --accent-teal-bright: #5eead4;
+    --accent-sky: #38bdf8;
+
+    --status-success: #34d399;
+    --status-warning: #fbbf24;
+    --status-danger: #fb7185;
+
+    --shadow-panel: 0 8px 30px rgba(0, 0, 0, 0.16);
+  }
+
+  * {
+    box-sizing: border-box;
+    border-color: var(--border-subtle);
+  }
+
+  html {
+    min-width: 320px;
+    scroll-behavior: smooth;
   }
 
   body {
     margin: 0;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
     background-color: var(--bg-page);
     color: var(--text-primary);
+
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+
+    font-size: 14px;
+    line-height: 1.5;
+
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    min-height: 100vh;
+
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
   }
 
-  * {
-    border-color: var(--border-subtle);
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  ::selection {
+    background: rgba(45, 212, 191, 0.25);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-teal);
+    outline-offset: 3px;
+  }
+
+  img,
+  svg {
+    display: block;
   }
 }
 
-/* Custom compact scrollbars */
+/* =========================================
+   REUSABLE VISTARA COMPONENT STYLES
+========================================= */
+
+@layer components {
+  .vistara-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    box-shadow: var(--shadow-panel);
+  }
+
+  .vistara-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+  }
+
+  .vistara-muted {
+    color: var(--text-muted);
+  }
+
+  .vistara-accent {
+    color: var(--accent-teal);
+  }
+
+  .vistara-gradient {
+    background: linear-gradient(
+      135deg,
+      #0f766e 0%,
+      #0d9488 50%,
+      #0891b2 100%
+    );
+  }
+}
+
+/* =========================================
+   SCROLLBARS
+========================================= */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -53,10 +180,32 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 3px;
+  background: rgba(119, 139, 163, 0.3);
+  border-radius: 20px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(119, 139, 163, 0.55);
+}
+
+/* Firefox */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #40546b transparent;
+}
+
+/* =========================================
+   RESPONSIVE & ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

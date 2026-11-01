@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface PageContainerProps {
@@ -16,28 +17,39 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   children,
 }) => {
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-200 dark:border-navy-800">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+    <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-6 sm:py-6 xl:px-8">
+
+      {/* Page heading */}
+      <div className="mb-6 flex flex-col gap-4 border-b border-[var(--border-subtle)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-bold tracking-tight text-[var(--text-primary)] sm:text-2xl">
               {title}
             </h2>
+
             {badge}
           </div>
+
           {subtitle && (
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[var(--text-muted)] sm:text-sm">
               {subtitle}
             </p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2.5 shrink-0">{actions}</div>}
+
+        {actions && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
 
-      {/* Main Content */}
-      <div className="space-y-6">{children}</div>
-    </div>
+      {/* Page content */}
+      <div className="space-y-6">
+        {children}
+      </div>
+
+    </main>
   );
 };
-

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import type { PageId } from './types/navigation';
+
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { MobileDrawer } from './components/layout/MobileDrawer';
@@ -12,39 +14,55 @@ import { MonitoringPage } from './pages/MonitoringPage';
 import { ModelReportPage } from './pages/ModelReportPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { HelpPage } from './pages/HelpPage';
-import { useEffect } from 'react';
-import { checkBackendHealth } from './services/healthService';
+
+import {
+  checkBackendHealth,
+  type HealthResponse,
+} from './services/healthService';
 
 export function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isBackendReady, setIsBackendReady] = useState(false);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+
   useEffect(() => {
-  let active = true;
+    let active = true;
 
-  const checkHealth = async () => {
-    const healthy = await checkBackendHealth();
+    const checkHealth = async () => {
+      const result = await checkBackendHealth();
 
-    if (active) {
-      setIsBackendReady(healthy);
-    }
-  };
+      if (active) {
+        setHealth(result);
+      }
+    };
 
-  void checkHealth();
-
-  const interval = window.setInterval(() => {
     void checkHealth();
-  }, 15000);
 
-  return () => {
-    active = false;
-    window.clearInterval(interval);
-  };
-}, []);
+    const interval = window.setInterval(() => {
+      void checkHealth();
+    }, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const isBackendReady =
+    health?.status === 'ok' &&
+    health.database?.status === 'ok' &&
+    health.model?.loaded === true &&
+    health.model?.status === 'loaded';
+
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage onNavigate={setCurrentPage} />;
+        return (
+          <OverviewPage
+            onNavigate={setCurrentPage}
+            health={health}
+          />
+        );
       case 'scanner':
         return <ScannerPage />;
       case 'batch':
@@ -58,20 +76,23 @@ export function App() {
       case 'help':
         return <HelpPage />;
       default:
-        return <OverviewPage onNavigate={setCurrentPage} />;
+        return (
+          <OverviewPage
+            onNavigate={setCurrentPage}
+            health={health}
+          />
+        );
     }
   };
 
   return (
     <ThemeProvider>
       <div className="flex min-h-screen bg-slate-50 dark:bg-navy-950 transition-colors duration-150">
-        {/* Desktop Sidebar */}
         <Sidebar
           currentPage={currentPage}
           onSelectPage={setCurrentPage}
         />
 
-        {/* Mobile Navigation Drawer */}
         <MobileDrawer
           isOpen={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
@@ -79,13 +100,13 @@ export function App() {
           onSelectPage={setCurrentPage}
         />
 
-        {/* Workspace Column */}
         <div className="flex flex-col flex-1 min-w-0">
           <Header
             currentPage={currentPage}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
             isDemoMode={!isBackendReady}
           />
+
           <main className="flex-1 overflow-y-auto">
             {renderCurrentPage()}
           </main>
